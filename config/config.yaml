@@ -1,6 +1,16 @@
 Ros:
   node_name: "grace_behav_exec"
   queue_size: 100
+  
+  #Gaze
+	hr_face_target_topic: "/hr/animation/set_face_target"
+	hr_head_gesture_topic: "/hr/animation/set_animation"
+  toggle_aversion_topic: "/grace_proj/toggle_aversion"
+	hr_ATTN_cfg_server: "/hr/behavior/attention"
+
+  #Head gestures
+  hr_nod_type_string: "nod_Short"
+
 
   #TTS 
   english_language_code: &id_lang_eng 'en-US' 
