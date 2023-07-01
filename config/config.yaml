@@ -3,10 +3,10 @@ Ros:
   queue_size: 100
   
   #Gaze
-	hr_face_target_topic: "/hr/animation/set_face_target"
-	hr_head_gesture_topic: "/hr/animation/set_animation"
+  hr_face_target_topic: "/hr/animation/set_face_target"
+  hr_head_gesture_topic: "/hr/animation/set_animation"
   toggle_aversion_topic: "/grace_proj/toggle_aversion"
-	hr_ATTN_cfg_server: "/hr/behavior/attention"
+  hr_ATTN_cfg_server: "/hr/behavior/attention"
 
   #Head gestures
   hr_nod_type_string: "nod_Short"
@@ -25,11 +25,12 @@ Ros:
   tts_end_event_string: "stop"
   tts_pure_token: '|p|'
 
-  #Expressions & Arm Gestures
+  #Arm Gestures
   arm_animation_topic: "/hr/animation/set_arm_animation"
   arm_animation_normal_length_service: "/hr/animation/get_arm_animation_length"
   arm_animation_motor_speed_reconfig: "/hr/animation/settings"
 
+  #Expressions
   expression_topic: "/hr/animation/set_expression"
 
   #Control Interface
@@ -37,26 +38,19 @@ Ros:
   grace_behavior_service: "/grace_proj/execute_behavior_command"
 
 
-Behavior:
-
-  #Behavior service related commands
-  behav_exec_rate: 30
+General:
   #Request
-  behav_exec_cmd: "exec"
-  behav_stop_cmd: "stop"
+  comp_behav_exec_cmd: "comp_exec"
+  arm_ges_exec_cmd: "arm_ges_exec"
+  all_behav_stop_cmd: "all_stop"
+
   #Response
   behav_succ_string: "completed"
-  behav_stopped_string: "stopped"
+  behav_all_stopped_string: "stopped"
 
-
-
-  #TTS 
-
-
-
-  #Expressions & Arm Gestures
-  arm_anim_min_motor_transition_time: 1.0
-  arm_anim_motor_transition_time: 2.0
+CompositeBehavior:
+  #Composite Behavior service related commands
+  comp_behav_exec_rate: 30
 
   Predefined:
     neutral_pose_info:
@@ -82,6 +76,27 @@ Behavior:
       ges_start: [0.1, 0.4, 0.8]
       ges_end: [0.3, 0.5, 0.9] 
       ges_mag: [1, 1, 1] 
+
+
+TTS:
+  #TTS 
+
+
+HeadGes:
+
+
+Gaze:
+
+
+
+ArmGes:
+  #Arm Gestures
+  arm_anim_min_motor_transition_time: 1.0
+  arm_anim_motor_transition_time: 2.0
+
+Expressions:
+  #Expressions 
+
 
 
 

@@ -39,8 +39,8 @@ class GestureExec:
         self.__arm_animation_reconfig_client = dynamic_reconfigure.client.Client(self.__config_data['Ros']['arm_animation_motor_speed_reconfig']) 
 
         #Gesture execution configs
-        self.__min_arm_anim_key_frame_transition = self.__config_data['Behavior']['arm_anim_min_motor_transition_time']
-        self.__default_arm_anim_key_frame_transition = self.__config_data['Behavior']['arm_anim_motor_transition_time']
+        self.__min_arm_anim_key_frame_transition = self.__config_data['ArmGes']['arm_anim_min_motor_transition_time']
+        self.__default_arm_anim_key_frame_transition = self.__config_data['ArmGes']['arm_anim_motor_transition_time']
 
         #Initialize
         self.__configAnimationMotorSpeed(self.__default_arm_anim_key_frame_transition)

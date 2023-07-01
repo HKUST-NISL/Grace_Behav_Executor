@@ -95,34 +95,44 @@ class BehavExec:
         #For expressions
         self.__expression_exec = utils.ExpressionExec.ExpressionExec(self.__config_data,self.__logger)
 
+        #For gaze & head gestures
+
+
         #For behaviour execution service
         self.__end_of_conv_sub = rospy.Subscriber(self.__config_data['Ros']['end_of_conv_topic'], std_msgs.msg.Bool, self.__endOfConvCallback, queue_size=self.__config_data['Ros']['queue_size'])
-        self.__grace_behavior_server = rospy.Service(self.__config_data['Ros']['grace_behavior_service'], grace_attn_msgs.srv.GraceBehavior, self.__handleGraceBehaviorServiceCall)
+        self.__behavior_server = rospy.Service(self.__config_data['Ros']['grace_behavior_service'], grace_attn_msgs.srv.GraceBehavior, self.__handleGraceBehaviorServiceCall)
 
 
-        self.__req_behav_exec_cmd = self.__config_data['Behavior']['behav_exec_cmd']
-        self.__req_behav_stop_cmd = self.__config_data['Behavior']['behav_stop_cmd']
-        self.__res__behav_succ = self.__config_data['Behavior']['behav_succ_string']
-        self.__res__behav_stopped = self.__config_data['Behavior']['behav_stopped_string']
+        self.__req_comp_behav_exec_cmd = self.__config_data['General']['comp_behav_exec_cmd']
+        self.__req_all_behav_stop_cmd = self.__config_data['General']['all_behav_stop_cmd']
+        
+        self.__res__behav_succ = self.__config_data['General']['behav_succ_string']
+        self.__res__behav_all_stopped = self.__config_data['General']['behav_all_stopped_string']
 
-        self.__behav_exec_rate = self.__config_data['Behavior']['behav_exec_rate']
+        self.__behav_exec_rate = self.__config_data['CompositeBehavior']['comp_behav_exec_rate']
+
 
 
     '''
-        Service handling
+        Composite Behavior Service handling
     '''
-    def __reqStop(self, req, res):
-        self.__stopAllBehviors()
-        res.result = self.__res__behav_stopped
-        return res
+    def __allBehavStop(self, req = None, res = None):
 
-    def __stopAllBehviors(self):
         #Cutoff any on-going tts
         self.__tts_exec.stopTTS()
-        #Reset to neutral arm-pose and facial expression
-        self.__goToNeutralGesExp()
 
-    def __reqExec(self, req, res):
+        #Reset to neutral arm-pose and facial expression
+        self.__goToNeutralComp()
+
+        #Neutral gaze & head
+
+        #Return evecution results if necessary
+        if(res != None):
+            res.result = self.__res__behav_all_stopped
+            return res
+
+
+    def __compositeExec(self, req, res):
         #We don't need auto-generated expressions and gestures anymore
         edited_text = self.__tts_exec.postEditTTSText(req.utterance)
         
@@ -130,12 +140,12 @@ class BehavExec:
         dur_total = self.__tts_exec.parseTTSDur(self.__tts_exec.getTTSData(edited_text,req.lang))
 
         #Arrange expressions and gestures in physical time
-        expression_seq = self.__arrangeExecSeq(dur_total, req.expressions, req.exp_start, req.exp_end, req.exp_mag)
-        gesture_seq = self.__arrangeExecSeq(dur_total, req.gestures, req.ges_start, req.ges_end, req.ges_mag)
+        expression_seq = self.__arrangeCompExecSeq(dur_total, req.expressions, req.exp_start, req.exp_end, req.exp_mag)
+        gesture_seq = self.__arrangeCompExecSeq(dur_total, req.gestures, req.ges_start, req.ges_end, req.ges_mag)
 
         #Prepare two threads for executing expression and gestures
-        exp_thread = threading.Thread(target=lambda: self.__execBySeq(expression_seq, self.__expression_exec.triggerExpressionFixedDur), daemon=False)
-        ges_thread = threading.Thread(target=lambda: self.__execBySeq(gesture_seq, self.__gesture_exec.triggerArmAnimationFixedDur), daemon=False)
+        exp_thread = threading.Thread(target=lambda: self.__compExecBySeq(expression_seq, self.__expression_exec.triggerExpressionFixedDur), daemon=False)
+        ges_thread = threading.Thread(target=lambda: self.__compExecBySeq(gesture_seq, self.__gesture_exec.triggerArmAnimationFixedDur), daemon=False)
 
 
         #Initiate tts, gesture, expression execution and start polling execution completion
@@ -153,7 +163,7 @@ class BehavExec:
                 self.__logger.info('Execution completed.')
                 
                 #Stop gesture and expressions
-                self.__goToNeutralGesExp()
+                self.__goToNeutralComp()
 
                 #Report successful completion of the behaviour execution
                 res.result = self.__res__behav_succ
@@ -165,7 +175,7 @@ class BehavExec:
 
         return res
 
-    def __arrangeExecSeq(self, total_dur, names, start_portion, end_portion, magnitude):
+    def __arrangeCompExecSeq(self, total_dur, names, start_portion, end_portion, magnitude):
         num_behav = len(names)
 
 
@@ -181,7 +191,7 @@ class BehavExec:
             behav_seq[i][3] = magnitude[i]
         return behav_seq
 
-    def __execBySeq(self, behav_seq, exec_fnc):
+    def __compExecBySeq(self, behav_seq, exec_fnc):
         
         num_behav = len(behav_seq)
         
@@ -210,24 +220,24 @@ class BehavExec:
 
             rate.sleep()
 
-    def __goToNeutralGesExp(self):
+    def __goToNeutralComp(self):
         #Kill any on-going behaviour service thread
         self.__behav_service_thread_keep_alive = False
 
         #Reset to a neutral arm pose
         self.__gesture_exec.triggerArmAnimationFixedDur(
-            self.__config_data['Behavior']['Predefined']['neutral_pose_info']['name'],
-            self.__config_data['Behavior']['Predefined']['neutral_pose_info']['dur'],
-            self.__config_data['Behavior']['Predefined']['neutral_pose_info']['magnitude'])
+            self.__config_data['CompositeBehavior']['Predefined']['neutral_pose_info']['name'],
+            self.__config_data['CompositeBehavior']['Predefined']['neutral_pose_info']['dur'],
+            self.__config_data['CompositeBehavior']['Predefined']['neutral_pose_info']['magnitude'])
 
         #Reset to a neutral expression
         self.__expression_exec.triggerExpressionFixedDur(
-            self.__config_data['Behavior']['Predefined']['neutral_expression_info']['name'],
-            self.__config_data['Behavior']['Predefined']['neutral_expression_info']['dur'],
-            self.__config_data['Behavior']['Predefined']['neutral_expression_info']['magnitude'])
+            self.__config_data['CompositeBehavior']['Predefined']['neutral_expression_info']['name'],
+            self.__config_data['CompositeBehavior']['Predefined']['neutral_expression_info']['dur'],
+            self.__config_data['CompositeBehavior']['Predefined']['neutral_expression_info']['magnitude'])
         
     def __endOfConvCallback(self, msg):
-        self.__stopAllBehviors()
+        self.__allBehavStop()
 
 
 
@@ -245,10 +255,10 @@ class BehavExec:
         #Prepare response object
         res = grace_attn_msgs.srv.GraceBehaviorResponse()
 
-        if(req.command == self.__req_behav_exec_cmd):
-            res = self.__reqExec(req,res)
-        elif(req.command == self.__req_behav_stop_cmd):
-            res = self.__reqStop(req,res)
+        if(req.command == self.__req_all_behav_stop_cmd):
+            res = self.__allBehavStop(req,res)
+        elif(req.command == self.__req_comp_behav_exec_cmd):
+            res = self.__compositeExec(req,res)
         else:
             self.__logger.error("Unexpected behavior command %s." % req.command)
         return res

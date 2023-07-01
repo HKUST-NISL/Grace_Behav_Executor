@@ -27,9 +27,6 @@ class NoddingHandling:
 
 
 	#Nodding
-	# # Deprecated: now nodding is controlled directly by the dialogue system
-	# nodding_text_topic = "/grace_proj/nodding_text"
-	# nodding_enabled = False
 	hr_nod_variants_range = [1,7] #8 and 9 use lower case "s" in SHORT
 	hr_nod_magnitude_range = [0.25,1.0]
 	# #Deprecated: now nodding is controlled directly by the dialogue system
