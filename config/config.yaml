@@ -1,0 +1,75 @@
+Ros:
+  node_name: "grace_behav_exec"
+  queue_size: 100
+
+  #TTS 
+  english_language_code: &id_lang_eng 'en-US' 
+  cantonese_language_code: &id_lang_yue 'yue-Hant-HK' 
+  tts_language_code: *id_lang_yue
+
+  tts_data_service: "/hr/control/speech/data"
+  tts_say_service: "/hr/control/speech/tts"
+  tts_control_topic: "/hr/control/speech/tts_control"
+  tts_event_topic: "/hr/control/speech/event"
+  tts_stop_cmd: "shutup"
+  tts_end_string: "stop"
+  tts_pure_token: '|p|'
+
+  #Expressions & Arm Gestures
+  arm_animation_topic: "/hr/animation/set_arm_animation"
+  arm_animation_normal_length_service: "/hr/animation/get_arm_animation_length"
+  arm_animation_motor_speed_reconfig: "/hr/animation/settings"
+
+  expression_topic: "/hr/animation/set_expression"
+
+  #Control Interface
+  end_of_conv_topic: "/grace_proj/stop"
+  grace_behavior_service: "/grace_proj/execute_behavior_command"
+
+
+Behavior:
+
+  #Commands
+  behav_exec_cmd: "exec"
+  behav_stop_cmd: "stop"
+
+
+
+  #TTS 
+
+
+
+  #Expressions & Arm Gestures
+  arm_anim_min_motor_transition_time: 1.0
+  arm_anim_motor_transition_time: 2.0
+
+
+
+
+Predefined:
+  neutral_pose_info:
+    name: "MAIN-1"
+    dur: 4
+    magnitude: 1.0
+
+  neutral_expression_info:
+    name: "happy"
+    dur: 3
+    magnitude: 0
+
+  sample:
+    txt: "Hello, this is a test script and I will just count. 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20."
+    lang: *id_lang_eng
+
+    expressions: ['happy','fear']
+    exp_start: [0.1, 0.6]
+    exp_end: [0.4, 0.9]
+    exp_mag: [0.8, 0.8]
+
+    gestures: ['MAIN-OOPS','MAIN-2','MAIN-1']
+    ges_start: [0.1, 0.4, 0.8]
+    ges_end: [0.3, 0.5, 0.9] 
+    ges_mag: [1, 1, 1] 
+
+
+
