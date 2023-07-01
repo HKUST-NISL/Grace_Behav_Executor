@@ -87,13 +87,13 @@ class BehavExec:
 
         
         #For tts
-        self.__tts_exec = utils.TTSExec(self.__config_data,self.__logger)
+        self.__tts_exec = utils.TTSExec.TTSExec(self.__config_data,self.__logger)
 
         #For arm gesture
-        self.__gesture_exec = utils.GestureExec(self.__config_data,self.__logger)
+        self.__gesture_exec = utils.GestureExec.GestureExec(self.__config_data,self.__logger)
 
         #For expressions
-        self.__expression_exec = utils.ExpressionExec(self.__config_data,self.__logger)
+        self.__expression_exec = utils.ExpressionExec.ExpressionExec(self.__config_data,self.__logger)
 
         #For behaviour execution service
         self.__end_of_conv_sub = rospy.Subscriber(self.__config_data['Ros']['end_of_conv_topic'], std_msgs.msg.Bool, self.__endOfConvCallback, queue_size=self.__config_data['Ros']['queue_size'])
@@ -226,7 +226,8 @@ class BehavExec:
             self.__config_data['Behavior']['Predefined']['neutral_expression_info']['dur'],
             self.__config_data['Behavior']['Predefined']['neutral_expression_info']['magnitude'])
         
-
+    def __endOfConvCallback(self, msg):
+        self.__stopAllBehviors()
 
 
 

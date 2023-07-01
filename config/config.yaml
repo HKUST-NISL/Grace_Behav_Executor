@@ -12,7 +12,7 @@ Ros:
   tts_control_topic: "/hr/control/speech/tts_control"
   tts_event_topic: "/hr/control/speech/event"
   tts_stop_cmd: "shutup"
-  tts_end_string: "stop"
+  tts_end_event_string: "stop"
   tts_pure_token: '|p|'
 
   #Expressions & Arm Gestures
@@ -59,7 +59,7 @@ Behavior:
       dur: 3
       magnitude: 0
 
-    sample:
+    Sample:
       txt: "Hello, this is a test script and I will just count. 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20."
       lang: *id_lang_eng
 

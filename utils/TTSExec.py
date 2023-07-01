@@ -41,7 +41,7 @@ class TTSExec:
         #TTS execution configs
         self.__tts_language_code = self.__config_data['Ros']['tts_language_code']
         self.__tts_stop_cmd = self.__config_data['Ros']['tts_stop_cmd']
-        self.__tts_end_string = self.__config_data['Ros']['tts_end_event']
+        self.__tts_end_event_string = self.__config_data['Ros']['tts_end_event_string']
         self.__tts_pure_token = self.__config_data['Ros']['tts_pure_token']
         self.__latest_tts_event_string = ''
 
@@ -71,10 +71,10 @@ class TTSExec:
 
     def postEditTTSText(self, raw_text):
         #We don't need auto-generated expressions and gestures
-        edited_text = selkf.__tts_pure_token + raw_text
+        edited_text = self.__tts_pure_token + raw_text
         return edited_text
 
-    def getTTSData(self, text, lang = self.__tts_language_code):
+    def getTTSData(self, text, lang):
         #Compose a request
         req = hr_msgs.srv.TTSDataRequest()
         req.txt = text
@@ -90,7 +90,7 @@ class TTSExec:
         dur = float(re.search('[0123456789.]+',dur_text.group()).group())
         return dur
 
-    def say(self, text, lang = self.__tts_language_code):
+    def say(self, text, lang):
         #Compose a request
         req = hr_msgs.srv.TTSTriggerRequest()
         req.text = text
@@ -100,4 +100,4 @@ class TTSExec:
         return self.__tts_say_client(req)
 
     def receivedTTSEndEvent(self):
-        return (self.__latest_tts_event_string == self.__tts_end_string)
+        return (self.__latest_tts_event_string == self.__tts_end_event_string)

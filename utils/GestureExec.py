@@ -43,7 +43,7 @@ class GestureExec:
         self.__default_arm_anim_key_frame_transition = self.__config_data['Behavior']['arm_anim_motor_transition_time']
 
         #Initialize
-        self.__configAnimationMotorSpeed()
+        self.__configAnimationMotorSpeed(self.__default_arm_anim_key_frame_transition)
 
 
 
@@ -52,7 +52,7 @@ class GestureExec:
     '''
         Helpers
     '''
-    def __configAnimationMotorSpeed(self, state_transition_dur = self.__default_arm_anim_key_frame_transition):
+    def __configAnimationMotorSpeed(self, state_transition_dur):
         #This is the state transition time for the motor to achieve when going from one key frame to another key frame
 
         #Compare with min state transition for safety
