@@ -2,14 +2,13 @@ Ros:
   node_name: "grace_behav_exec"
   queue_size: 100
   
-  #Gaze
+  #Gaze & Head gestures
+  hr_people_perception_topic: "/hr/perception/people"
+  hr_ATTN_cfg_server: "/hr/behavior/attention"
   hr_face_target_topic: "/hr/animation/set_face_target"
   hr_head_gesture_topic: "/hr/animation/set_animation"
-  toggle_aversion_topic: "/grace_proj/toggle_aversion"
-  hr_ATTN_cfg_server: "/hr/behavior/attention"
-
-  #Head gestures
-  hr_nod_type_string: "nod_Short"
+  hr_nod_common_string: "nod_Short"
+  final_target_person_topic: "/grace_proj/final_target_person"
 
 
   #TTS 
@@ -41,7 +40,9 @@ Ros:
 General:
   #Request
   comp_behav_exec_cmd: "comp_exec"
-  arm_ges_exec_cmd: "arm_ges_exec"
+  nod_cmd: "nod"
+  head_gaze_follow: "head_gaze_follow"
+  head_gaze_avert: "head_gaze_avert"
   all_behav_stop_cmd: "all_stop"
 
   #Response
@@ -82,10 +83,24 @@ TTS:
   #TTS 
 
 
-HeadGes:
+HeadGazeGes:
+  #Nodding
+  #(1-7)
+  nod_type_strings: [1,7]
+  #[0.25, 1.0]
+  nod_mag_range: [0.25, 1.0]
 
+  #Following & aversion
+  gaze_thread_rate: 5
 
-Gaze:
+  follow_timeout: 2.0
+
+  dummy_target_id: "gaze_dummy_target"
+  aversion_loc_range: [0.1,0.3]
+  neutral_gaze_dummy_target: [1.5, 0, 1.5, 1.0] #x-y-z-Speed
+  no_target_string: "None"
+  aversion_target_min_life_expand: 1.5
+  aversion_mean_life_expand: 2.5
 
 
 

@@ -28,7 +28,7 @@ import std_msgs
 import utils.TTSExec
 import utils.ExpressionExec
 import utils.GestureExec
-
+import utils.HeadGazeGesExec
 
 
 
@@ -96,7 +96,7 @@ class BehavExec:
         self.__expression_exec = utils.ExpressionExec.ExpressionExec(self.__config_data,self.__logger)
 
         #For gaze & head gestures
-
+        self.__head_gaze_exec = utils.HeadGazeGesExec.HeadGazeGesExec(self.__config_data,self.__logger)
 
         #For behaviour execution service
         self.__end_of_conv_sub = rospy.Subscriber(self.__config_data['Ros']['end_of_conv_topic'], std_msgs.msg.Bool, self.__endOfConvCallback, queue_size=self.__config_data['Ros']['queue_size'])
@@ -104,6 +104,9 @@ class BehavExec:
 
 
         self.__req_comp_behav_exec_cmd = self.__config_data['General']['comp_behav_exec_cmd']
+        self.__req_nod_cmd = self.__config_data['General']['nod_cmd']
+        self.__req_hg_follow_cmd = self.__config_data['General']['head_gaze_follow']
+        self.__req_hg_avert_cmd = self.__config_data['General']['head_gaze_avert']
         self.__req_all_behav_stop_cmd = self.__config_data['General']['all_behav_stop_cmd']
         
         self.__res__behav_succ = self.__config_data['General']['behav_succ_string']
@@ -111,11 +114,6 @@ class BehavExec:
 
         self.__behav_exec_rate = self.__config_data['CompositeBehavior']['comp_behav_exec_rate']
 
-
-
-    '''
-        Composite Behavior Service handling
-    '''
     def __allBehavStop(self, req = None, res = None):
 
         #Cutoff any on-going tts
@@ -125,13 +123,21 @@ class BehavExec:
         self.__goToNeutralComp()
 
         #Neutral gaze & head
-
+        self.__head_gaze_exec.goToNeutral()
+        
         #Return evecution results if necessary
         if(res != None):
             res.result = self.__res__behav_all_stopped
             return res
+        
+    def __endOfConvCallback(self, msg):
+        self.__allBehavStop()
 
 
+
+    '''
+        Composite Behavior Service handling
+    '''
     def __compositeExec(self, req, res):
         #We don't need auto-generated expressions and gestures anymore
         edited_text = self.__tts_exec.postEditTTSText(req.utterance)
@@ -235,10 +241,6 @@ class BehavExec:
             self.__config_data['CompositeBehavior']['Predefined']['neutral_expression_info']['name'],
             self.__config_data['CompositeBehavior']['Predefined']['neutral_expression_info']['dur'],
             self.__config_data['CompositeBehavior']['Predefined']['neutral_expression_info']['magnitude'])
-        
-    def __endOfConvCallback(self, msg):
-        self.__allBehavStop()
-
 
 
 
@@ -259,6 +261,13 @@ class BehavExec:
             res = self.__allBehavStop(req,res)
         elif(req.command == self.__req_comp_behav_exec_cmd):
             res = self.__compositeExec(req,res)
+        elif(req.command == self.__req_nod_cmd):
+            self.__head_gaze_exec.nodOnce()
+            res.result = self.__res__behav_succ
+        elif(req.command == self.__req_hg_follow_cmd):
+            self.__head_gaze_exec.startFollowing()
+        elif(req.command == self.__req_hg_avert_cmd):
+            self.__head_gaze_exec.startAverting()
         else:
             self.__logger.error("Unexpected behavior command %s." % req.command)
         return res
