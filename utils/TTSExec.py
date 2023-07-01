@@ -49,7 +49,32 @@ class TTSExec:
     '''
         Helpers
     '''
-    def __getTTSData(self, text, lang = self.__tts_language_code):
+    def __pubTTSCtrlCmd(self, cmd):
+        #Compose a message
+        msg = std_msgs.msg.String()
+        msg.data = cmd
+
+        #Publish
+        self.__tts_control_pub.publish(msg)
+
+    def __ttsEventCallback(self, msg):
+        self.__latest_tts_event_string = msg.data
+        self.__logger.info('Latest TTS event is \"%s\".' % self.__latest_tts_event_string)
+
+
+
+    '''
+        Interface
+    '''
+    def stopTTS(self):
+        self.__pubTTSCtrlCmd(self.__tts_stop_cmd)
+
+    def postEditTTSText(self, raw_text):
+        #We don't need auto-generated expressions and gestures
+        edited_text = selkf.__tts_pure_token + raw_text
+        return edited_text
+
+    def getTTSData(self, text, lang = self.__tts_language_code):
         #Compose a request
         req = hr_msgs.srv.TTSDataRequest()
         req.txt = text
@@ -59,24 +84,13 @@ class TTSExec:
         res = self.__tts_data_client(req)
         return res
 
-    def __parseTTSDur(self, tts_data_response):
+    def parseTTSDur(self, tts_data_response):
         #Only one occurence by default
         dur_text = re.search('\"duration\": [0123456789.]+,', tts_data_response.data)
         dur = float(re.search('[0123456789.]+',dur_text.group()).group())
         return dur
 
-    def __pubTTSCtrlCmd(self, cmd):
-        #Compose a message
-        msg = std_msgs.msg.String()
-        msg.data = cmd
-
-        #Publish
-        self.__tts_control_pub.publish(msg)
-
-    def __stopTTS(self):
-        self.__pubTTSCtrlCmd(self.__tts_stop_cmd)
-
-    def __say(self, text, lang = self.__tts_language_code):
+    def say(self, text, lang = self.__tts_language_code):
         #Compose a request
         req = hr_msgs.srv.TTSTriggerRequest()
         req.text = text
@@ -85,13 +99,5 @@ class TTSExec:
         #Call the service
         return self.__tts_say_client(req)
 
-    def __ttsEventCallback(self, msg):
-        self.__latest_tts_event = msg.data
-        print('Latest TTS event is \"%s\".' % self.__latest_tts_event)
-
-
-
-    '''
-        Interface
-    '''
-
+    def receivedTTSEndEvent(self):
+        return (self.__latest_tts_event_string == self.__tts_end_string)
