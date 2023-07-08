@@ -35,19 +35,26 @@ if __name__ == '__main__':
         configs['Ros']['grace_behavior_service'], 
         grace_attn_msgs.srv.GraceBehavior)
 
-    # #(1) Test Following, Aversion
-    # req = grace_attn_msgs.srv.GraceBehaviorRequest()
+
+
+
+
+    #(1) Test Following, Aversion
+    req = grace_attn_msgs.srv.GraceBehaviorRequest()
     # req.command = configs['General']['head_gaze_avert']
-    # # req.command = configs['General']['head_gaze_follow']
-    # print("Service call response is:\n %s" % grace_behavior_client(req))
+    req.command = configs['General']['head_gaze_follow']
+    print("Service call response is:\n %s" % grace_behavior_client(req))
     
 
 
 
-    #(2) Test Nodding
-    req = grace_attn_msgs.srv.GraceBehaviorRequest()
-    req.command = configs['General']['nod_cmd']
-    print("Service call response is:\n %s" % grace_behavior_client(req))
+    # #(2) Test Nodding
+    # req = grace_attn_msgs.srv.GraceBehaviorRequest()
+    # req.command = configs['General']['nod_cmd']
+    # print("Service call response is:\n %s" % grace_behavior_client(req))
+
+
+
 
     # #(3) Test Composite
     # req = grace_attn_msgs.srv.GraceBehaviorRequest()

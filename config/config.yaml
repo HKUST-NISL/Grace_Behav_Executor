@@ -35,7 +35,9 @@ Ros:
   #Control Interface
   end_of_conv_topic: "/grace_proj/stop"
   grace_behavior_service: "/grace_proj/execute_behavior_command"
-  behav_event_topic: "/grace_proj/behav_event"
+  speak_event_topic: "/grace_proj/speak_event"
+  nod_event_topic: "/grace_proj/nod_event"
+  gaze_event_topic: "/grace_proj/gaze_event"
 
 
 
@@ -52,11 +54,12 @@ General:
   behav_all_stopped_string: "stopped"
 
   #Event code
-  all_stopped_name: "all_stopped"
   start_speaking_event_name: "speaking_start"
   stop_speaking_event_name: "speaking_stop"
+
   start_nodding_event_name: "nodding_start"
   stop_nodding_event_name: "nodding_stop"
+  
   start_following_event_name: "gaze_following"
   start_aversion_event_name: "gaze_aversion"
 
