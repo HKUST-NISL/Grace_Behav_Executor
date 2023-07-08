@@ -101,9 +101,16 @@ class BehavExec:
         self.__head_gaze_exec = utils.HeadGazeGesExec.HeadGazeGesExec(self.__config_data,self.__logger)
 
         #For behaviour execution service
-        self.__end_of_conv_sub = rospy.Subscriber(self.__config_data['Ros']['end_of_conv_topic'], std_msgs.msg.Bool, self.__endOfConvCallback, queue_size=self.__config_data['Ros']['queue_size'])
-        self.__behavior_server = rospy.Service(self.__config_data['Ros']['grace_behavior_service'], grace_attn_msgs.srv.GraceBehavior, self.__handleGraceBehaviorServiceCall)
-
+        self.__end_of_conv_sub = rospy.Subscriber(      
+                                        self.__config_data['Ros']['end_of_conv_topic'], 
+                                        std_msgs.msg.Bool, 
+                                        self.__endOfConvCallback, 
+                                        queue_size=self.__config_data['Ros']['queue_size'])
+        self.__behavior_server = rospy.Service(
+                                        self.__config_data['Ros']['grace_behavior_service'],
+                                        grace_attn_msgs.srv.GraceBehavior, 
+                                        self.__handleGraceBehaviorServiceCall,
+                                        queue_size=self.__config_data['Ros']['queue_size'])
 
         self.__req_comp_behav_exec_cmd = self.__config_data['General']['comp_behav_exec_cmd']
         self.__req_nod_cmd = self.__config_data['General']['nod_cmd']

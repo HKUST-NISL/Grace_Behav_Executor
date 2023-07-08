@@ -75,6 +75,8 @@ class HeadGazeGesExec:
 		self.__gaze_exec.gaze_state = GazeBehavExec.GazeBehavior.FOLLOW
 
 	def startAverting(self):
+		#Make sure aversion will happen immediately
+		self.__gaze_exec.resetAversionExpiryStamp()
 		self.__gaze_exec.gaze_state = GazeBehavExec.GazeBehavior.AVERSION
 
 	def goToNeutral(self):

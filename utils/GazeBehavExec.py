@@ -146,7 +146,8 @@ class GazeBehavExec:
             self.__aversion_target_expiry_stamp = interval + time.time() 
             self.__logger.info("Next aversion target in %f seconds." % interval)
 
-
+    def resetAversionExpiryStamp(self):
+        self.__aversion_target_expiry_stamp = -1
 
     def __gazeBehavThread(self):
         rate = rospy.Rate(self.__gaze_thread_rate)

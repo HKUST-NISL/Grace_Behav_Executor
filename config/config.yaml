@@ -36,7 +36,6 @@ Ros:
   end_of_conv_topic: "/grace_proj/stop"
   grace_behavior_service: "/grace_proj/execute_behavior_command"
 
-
 General:
   #Request
   comp_behav_exec_cmd: "comp_exec"
