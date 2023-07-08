@@ -39,11 +39,11 @@ if __name__ == '__main__':
 
 
 
-    #(1) Test Following, Aversion
-    req = grace_attn_msgs.srv.GraceBehaviorRequest()
-    # req.command = configs['General']['head_gaze_avert']
-    req.command = configs['General']['head_gaze_follow']
-    print("Service call response is:\n %s" % grace_behavior_client(req))
+    # #(1) Test Following, Aversion
+    # req = grace_attn_msgs.srv.GraceBehaviorRequest()
+    # # req.command = configs['General']['head_gaze_avert']
+    # req.command = configs['General']['head_gaze_follow']
+    # print("Service call response is:\n %s" % grace_behavior_client(req))
     
 
 
