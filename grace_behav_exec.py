@@ -109,7 +109,11 @@ class BehavExec:
         self.__behavior_server = rospy.Service(
                                         self.__config_data['Ros']['grace_behavior_service'],
                                         grace_attn_msgs.srv.GraceBehavior, 
-                                        self.__handleGraceBehaviorServiceCall,
+                                        self.__handleGraceBehaviorServiceCall)
+
+        self.__behav_event_pub = rospy.Publisher(      
+                                        self.__config_data['Ros']['behav_event_topic'], 
+                                        std_msgs.msg.String,
                                         queue_size=self.__config_data['Ros']['queue_size'])
 
         self.__req_comp_behav_exec_cmd = self.__config_data['General']['comp_behav_exec_cmd']
@@ -268,15 +272,29 @@ class BehavExec:
 
         if(req.command == self.__req_all_behav_stop_cmd):
             res = self.__allBehavStop(req,res)
+            self.__behav_event_pub.publish( self.__config_data['General']['all_stopped_name'] )
+
         elif(req.command == self.__req_comp_behav_exec_cmd):
+            self.__behav_event_pub.publish( self.__config_data['General']['start_speaking_event_name'] )
             res = self.__compositeExec(req,res)
+            self.__behav_event_pub.publish( self.__config_data['General']['stop_speaking_event_name'] )
+            
         elif(req.command == self.__req_nod_cmd):
+            self.__behav_event_pub.publish( self.__config_data['General']['start_nodding_event_name'] )
             self.__head_gaze_exec.nodOnce()
             res.result = self.__res__behav_succ
+            self.__behav_event_pub.publish( self.__config_data['General']['stop_nodding_event_name'] )
+
         elif(req.command == self.__req_hg_follow_cmd):
+            self.__behav_event_pub.publish( self.__config_data['General']['start_following_event_name'] )
             self.__head_gaze_exec.startFollowing()
+            res.result = self.__res__behav_succ
+
         elif(req.command == self.__req_hg_avert_cmd):
+            self.__behav_event_pub.publish( self.__config_data['General']['start_aversion_event_name'] )
             self.__head_gaze_exec.startAverting()
+            res.result = self.__res__behav_succ
+
         else:
             self.__logger.error("Unexpected behavior command %s." % req.command)
         return res

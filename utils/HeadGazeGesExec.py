@@ -10,6 +10,7 @@ import logging
 import sys
 from datetime import datetime
 import time
+import numpy
 
 #ros
 import dynamic_reconfigure.client
@@ -69,7 +70,8 @@ class HeadGazeGesExec:
 		nodding_gesture_cmd.speed = 1.0
 		nodding_gesture_cmd.magnitude = numpy.random.uniform(self.__nod_mag_range[0],self.__nod_mag_range[1])
 		self.__hr_head_gesture_pub.publish(nodding_gesture_cmd)
-
+		#Dummy sleep
+		time.sleep(self.__config_data['HeadGazeGes']['nod_dummy_dur'])
 
 	def startFollowing(self):
 		self.__gaze_exec.gaze_state = GazeBehavExec.GazeBehavior.FOLLOW

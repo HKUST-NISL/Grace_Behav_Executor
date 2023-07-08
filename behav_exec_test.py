@@ -35,25 +35,37 @@ if __name__ == '__main__':
         configs['Ros']['grace_behavior_service'], 
         grace_attn_msgs.srv.GraceBehavior)
 
-    #Prepare a service request
+    # #(1) Test Following, Aversion
+    # req = grace_attn_msgs.srv.GraceBehaviorRequest()
+    # req.command = configs['General']['head_gaze_avert']
+    # # req.command = configs['General']['head_gaze_follow']
+    # print("Service call response is:\n %s" % grace_behavior_client(req))
+    
+
+
+
+    #(2) Test Nodding
     req = grace_attn_msgs.srv.GraceBehaviorRequest()
-    req.command = configs['General']['comp_behav_exec_cmd']
-    req.utterance = configs['CompositeBehavior']['Predefined']['Sample']['txt']
-    req.lang = configs['CompositeBehavior']['Predefined']['Sample']['lang']
-
-    req.expressions = configs['CompositeBehavior']['Predefined']['Sample']['expressions']
-    req.exp_start = configs['CompositeBehavior']['Predefined']['Sample']['exp_start']
-    req.exp_end = configs['CompositeBehavior']['Predefined']['Sample']['exp_end']
-    req.exp_mag = configs['CompositeBehavior']['Predefined']['Sample']['exp_mag']
-
-    req.gestures = configs['CompositeBehavior']['Predefined']['Sample']['gestures']
-    req.ges_start = configs['CompositeBehavior']['Predefined']['Sample']['ges_start']
-    req.ges_end = configs['CompositeBehavior']['Predefined']['Sample']['ges_end']
-    req.ges_mag = configs['CompositeBehavior']['Predefined']['Sample']['ges_mag']
-
-    #Call the service
+    req.command = configs['General']['nod_cmd']
     print("Service call response is:\n %s" % grace_behavior_client(req))
 
+    # #(3) Test Composite
+    # req = grace_attn_msgs.srv.GraceBehaviorRequest()
+    # req.command = configs['General']['comp_behav_exec_cmd']
+    # req.utterance = configs['CompositeBehavior']['Predefined']['Sample']['txt']
+    # req.lang = configs['CompositeBehavior']['Predefined']['Sample']['lang']
+
+    # req.expressions = configs['CompositeBehavior']['Predefined']['Sample']['expressions']
+    # req.exp_start = configs['CompositeBehavior']['Predefined']['Sample']['exp_start']
+    # req.exp_end = configs['CompositeBehavior']['Predefined']['Sample']['exp_end']
+    # req.exp_mag = configs['CompositeBehavior']['Predefined']['Sample']['exp_mag']
+
+    # req.gestures = configs['CompositeBehavior']['Predefined']['Sample']['gestures']
+    # req.ges_start = configs['CompositeBehavior']['Predefined']['Sample']['ges_start']
+    # req.ges_end = configs['CompositeBehavior']['Predefined']['Sample']['ges_end']
+    # req.ges_mag = configs['CompositeBehavior']['Predefined']['Sample']['ges_mag']
+
+    # print("Service call response is:\n %s" % grace_behavior_client(req))
 
 
 

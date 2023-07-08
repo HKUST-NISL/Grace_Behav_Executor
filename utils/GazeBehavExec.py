@@ -42,7 +42,7 @@ class GazeBehavExec:
         #ROS IO
         self.__hr_people_pub = rospy.Publisher(self.__config_data['Ros']['hr_people_perception_topic'], hr_msgs.msg.People, queue_size=self.__config_data['Ros']['queue_size'])
         self.__hr_face_target_pub = rospy.Publisher(self.__config_data['Ros']['hr_face_target_topic'], hr_msgs.msg.Target, queue_size=self.__config_data['Ros']['queue_size'])
-        self.__hr_ATTN_cfg_client = dynamic_reconfigure.client.Client(self.__config_data['Ros']['hr_ATTN_cfg_server'])
+        self.__hr_ATTN_cfg_client = dynamic_reconfigure.client.Client(self.__config_data['Ros']['hr_ATTN_cfg_server'],timeout=self.__config_data['Ros']['attn_timeout'])
         self.__target_person_sub = rospy.Subscriber(self.__config_data['Ros']['final_target_person_topic'], hr_msgs.msg.Person, self.__targetPersonCallback, queue_size=self.__config_data['Ros']['queue_size'])
 
 

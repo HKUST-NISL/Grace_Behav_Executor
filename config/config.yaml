@@ -9,7 +9,7 @@ Ros:
   hr_head_gesture_topic: "/hr/animation/set_animation"
   hr_nod_common_string: "nod_Short"
   final_target_person_topic: "/grace_proj/final_target_person"
-
+  attn_timeout: 2.0
 
   #TTS 
   english_language_code: &id_lang_eng 'en-US' 
@@ -35,6 +35,9 @@ Ros:
   #Control Interface
   end_of_conv_topic: "/grace_proj/stop"
   grace_behavior_service: "/grace_proj/execute_behavior_command"
+  behav_event_topic: "/grace_proj/behav_event"
+
+
 
 General:
   #Request
@@ -47,6 +50,18 @@ General:
   #Response
   behav_succ_string: "completed"
   behav_all_stopped_string: "stopped"
+
+  #Event code
+  all_stopped_name: "all_stopped"
+  start_speaking_event_name: "speaking_start"
+  stop_speaking_event_name: "speaking_stop"
+  start_nodding_event_name: "nodding_start"
+  stop_nodding_event_name: "nodding_stop"
+  start_following_event_name: "gaze_following"
+  start_aversion_event_name: "gaze_aversion"
+
+
+
 
 CompositeBehavior:
   #Composite Behavior service related commands
@@ -88,6 +103,7 @@ HeadGazeGes:
   nod_type_strings: [1,7]
   #[0.25, 1.0]
   nod_mag_range: [0.25, 1.0]
+  nod_dummy_dur: 0.2
 
   #Following & aversion
   gaze_thread_rate: 5
@@ -98,8 +114,8 @@ HeadGazeGes:
   aversion_loc_range: [0.1,0.3]
   neutral_gaze_dummy_target: [1.5, 0, 1.5, 1.0] #x-y-z-Speed
   no_target_string: "None"
-  aversion_target_min_life_expand: 1.5
-  aversion_mean_life_expand: 2.5
+  aversion_target_min_life_expand: 1.5 #Minimal living time of an aversion target
+  aversion_mean_life_expand: 2.5 #Mean living time per aversion target
 
 
 
