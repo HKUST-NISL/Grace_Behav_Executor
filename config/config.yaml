@@ -36,6 +36,7 @@ Ros:
   end_of_conv_topic: "/grace_proj/stop"
   grace_behavior_service: "/grace_proj/execute_behavior_command"
   speak_event_topic: "/grace_proj/speak_event"
+  hum_event_topic: "/grace_proj/hum_event"
   nod_event_topic: "/grace_proj/nod_event"
   gaze_event_topic: "/grace_proj/gaze_event"
 
@@ -44,23 +45,31 @@ Ros:
 General:
   #Request
   comp_behav_exec_cmd: "comp_exec"
+  hum_behav_exec_cmd: "hum_exec"
   nod_cmd: "nod"
   head_gaze_follow: "head_gaze_follow"
   head_gaze_avert: "head_gaze_avert"
+  utterance_behav_stop_cmd: "utterance_stop"
   all_behav_stop_cmd: "all_stop"
 
   #Response
   behav_succ_string: "completed"
-  behav_all_stopped_string: "stopped"
+  utterance_stopped_string: "utterance_stopped"
+  behav_all_stopped_string: "all_stopped"
+
 
   #Event code
   start_speaking_event_name: "speaking_start"
   stop_speaking_event_name: "speaking_stop"
 
+  start_humming_event_name: "humming_start"
+  stop_humming_event_name:  "humming_stop"
+
   start_nodding_event_name: "nodding_start"
   stop_nodding_event_name: "nodding_stop"
   
   start_following_event_name: "gaze_following"
+  gaze_neutral_event_name: "gaze_neutral"
   start_aversion_event_name: "gaze_aversion"
 
 

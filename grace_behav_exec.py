@@ -115,6 +115,10 @@ class BehavExec:
                                         self.__config_data['Ros']['speak_event_topic'], 
                                         std_msgs.msg.String,
                                         queue_size=self.__config_data['Ros']['queue_size'])
+        self.__hum_event_pub = rospy.Publisher(      
+                                        self.__config_data['Ros']['hum_event_topic'], 
+                                        std_msgs.msg.String,
+                                        queue_size=self.__config_data['Ros']['queue_size'])
         self.__nod_event_pub = rospy.Publisher(      
                                         self.__config_data['Ros']['nod_event_topic'], 
                                         std_msgs.msg.String,
@@ -127,19 +131,29 @@ class BehavExec:
 
     def __allBehavStop(self, req = None, res = None):
 
+        #Cutoff any on-going composite behavior
+        self.__compBehavStop()
+
+        #Neutral gaze & head
+        self.__head_gaze_exec.goToNeutral()
+        self.__gaze_event_pub.publish( self.__config_data['General']['gaze_neutral_event_name'] )
+        self.__nod_event_pub.publish( self.__config_data['General']['stop_nodding_event_name'] )
+
+        #Return evecution results if necessary
+        if(res != None):
+            res.result = self.__config_data['General']['behav_all_stopped_string']
+            return res
+    
+    def __compBehavStop(self):
         #Cutoff any on-going tts
         self.__tts_exec.stopTTS()
 
         #Reset to neutral arm-pose and facial expression
         self.__goToNeutralComp()
 
-        #Neutral gaze & head
-        self.__head_gaze_exec.goToNeutral()
-        
-        #Return evecution results if necessary
-        if(res != None):
-            res.result = self.__config_data['General']['behav_all_stopped_string']
-            return res
+        #Robot behav state events
+        self.__speak_event_pub.publish( self.__config_data['General']['stop_speaking_event_name'] )
+        self.__hum_event_pub.publish( self.__config_data['General']['stop_humming_event_name'] ) 
         
     def __endOfConvCallback(self, msg):
         self.__allBehavStop()
@@ -271,11 +285,23 @@ class BehavExec:
         if(req.command == self.__config_data['General']['all_behav_stop_cmd']):
             res = self.__allBehavStop(req,res)
 
+        elif(req.command == self.__config_data['General']['utterance_behav_stop_cmd']):
+            self.__compBehavStop()
+            res = self.__config_data['General']['utterance_stopped_string']
+  
+
         elif(req.command == self.__config_data['General']['comp_behav_exec_cmd']):
+            self.__compBehavStop()#stop previous ones
             self.__speak_event_pub.publish( self.__config_data['General']['start_speaking_event_name'] )
             res = self.__compositeExec(req,res)
             self.__speak_event_pub.publish( self.__config_data['General']['stop_speaking_event_name'] )
-            
+        
+        elif(req.command == self.__config_data['General']['hum_behav_exec_cmd']):
+            self.__compBehavStop()#stop previous ones
+            self.__hum_event_pub.publish( self.__config_data['General']['start_humming_event_name'] )
+            res = self.__compositeExec(req,res)
+            self.__hum_event_pub.publish( self.__config_data['General']['stop_humming_event_name'] )   
+        
         elif(req.command == self.__config_data['General']['nod_cmd']):
             self.__nod_event_pub.publish( self.__config_data['General']['start_nodding_event_name'] )
             self.__head_gaze_exec.nodOnce()
