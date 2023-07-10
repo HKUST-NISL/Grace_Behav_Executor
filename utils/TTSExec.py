@@ -91,6 +91,9 @@ class TTSExec:
         return dur
 
     def say(self, text, lang):
+        #Clear event string
+        self.__latest_tts_event_string = ''
+
         #Compose a request
         req = hr_msgs.srv.TTSTriggerRequest()
         req.text = text

@@ -155,6 +155,7 @@ class BehavExec:
         self.__speak_event_pub.publish( self.__config_data['General']['stop_speaking_event_name'] )
         self.__hum_event_pub.publish( self.__config_data['General']['stop_humming_event_name'] ) 
         
+
     def __endOfConvCallback(self, msg):
         self.__allBehavStop()
 
