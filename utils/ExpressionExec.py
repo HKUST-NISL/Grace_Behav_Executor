@@ -31,7 +31,10 @@ class ExpressionExec:
         self.__logger = logger.getChild(self.__class__.__name__)
 
         #Ros io
-        self.__expression_pub = rospy.Publisher(self.__config_data['Ros']['expression_topic'], hr_msgs.msg.SetExpression, queue_size=self.__config_data['Ros']['queue_size'])
+        self.__expression_pub = rospy.Publisher(
+                                    self.__config_data['HR']['Exp']['expression_topic'], 
+                                    hr_msgs.msg.SetExpression, 
+                                    queue_size=self.__config_data['Custom']['Ros']['queue_size'])
 
 
 

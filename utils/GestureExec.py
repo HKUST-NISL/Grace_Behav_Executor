@@ -34,13 +34,19 @@ class GestureExec:
         self.__logger = logger.getChild(self.__class__.__name__)
 
         #Ros io
-        self.__arm_animation_pub = rospy.Publisher(self.__config_data['Ros']['arm_animation_topic'], hr_msgs.msg.SetAnimation, queue_size=self.__config_data['Ros']['queue_size'])
-        self.__arm_animation_normal_length = rospy.ServiceProxy(self.__config_data['Ros']['arm_animation_normal_length_service'], hr_msgs.srv.GetAnimationLength)
-        self.__arm_animation_reconfig_client = dynamic_reconfigure.client.Client(self.__config_data['Ros']['arm_animation_motor_speed_reconfig']) 
+        self.__arm_animation_pub = rospy.Publisher(
+                                        self.__config_data['HR']['Arm']['arm_animation_topic'], 
+                                        hr_msgs.msg.SetAnimation, 
+                                        queue_size=self.__config_data['Custom']['Ros']['queue_size'])
+        self.__arm_animation_normal_length = rospy.ServiceProxy(
+                                        self.__config_data['HR']['Arm']['arm_animation_normal_length_service'], 
+                                        hr_msgs.srv.GetAnimationLength)
+        self.__arm_animation_reconfig_client = dynamic_reconfigure.client.Client(
+                                        self.__config_data['HR']['Arm']['arm_animation_motor_speed_reconfig']) 
 
         #Gesture execution configs
-        self.__min_arm_anim_key_frame_transition = self.__config_data['ArmGes']['arm_anim_min_motor_transition_time']
-        self.__default_arm_anim_key_frame_transition = self.__config_data['ArmGes']['arm_anim_motor_transition_time']
+        self.__min_arm_anim_key_frame_transition = self.__config_data['BehavExec']['ArmGes']['arm_anim_min_motor_transition_time']
+        self.__default_arm_anim_key_frame_transition = self.__config_data['BehavExec']['ArmGes']['arm_anim_motor_transition_time']
 
         #Initialize
         self.__configAnimationMotorSpeed(self.__default_arm_anim_key_frame_transition)

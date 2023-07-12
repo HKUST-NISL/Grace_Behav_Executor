@@ -37,7 +37,10 @@ class HeadGazeGesExec:
 		'''
 			ROS io
 		'''
-		self.__hr_head_gesture_pub = rospy.Publisher(self.__config_data['Ros']['hr_head_gesture_topic'], hr_msgs.msg.SetAnimation, queue_size=self.__config_data['Ros']['queue_size'])
+		self.__hr_head_gesture_pub = rospy.Publisher(
+										self.__config_data['HR']['GazeHead']['hr_head_gesture_topic'], 
+										hr_msgs.msg.SetAnimation, 
+										queue_size=self.__config_data['Custom']['Ros']['queue_size'])
 
 
 
@@ -45,9 +48,9 @@ class HeadGazeGesExec:
 			Head Gesture
 		'''
 		#Nodding
-		self.__nod_prefix_string = self.__config_data['Ros']['hr_nod_common_string']
-		self.__nod_type_strings = self.__config_data['HeadGazeGes']['nod_type_strings']
-		self.__nod_mag_range = self.__config_data['HeadGazeGes']['nod_mag_range']
+		self.__nod_prefix_string = self.__config_data['HR']['GazeHead']['hr_nod_common_string']
+		self.__nod_type_strings = self.__config_data['BehavExec']['HeadGazeGes']['nod_type_strings']
+		self.__nod_mag_range = self.__config_data['BehavExec']['HeadGazeGes']['nod_mag_range']
 
 
 		'''
@@ -71,7 +74,7 @@ class HeadGazeGesExec:
 		nodding_gesture_cmd.magnitude = numpy.random.uniform(self.__nod_mag_range[0],self.__nod_mag_range[1])
 		self.__hr_head_gesture_pub.publish(nodding_gesture_cmd)
 		#Dummy sleep
-		time.sleep(self.__config_data['HeadGazeGes']['nod_dummy_dur'])
+		time.sleep(self.__config_data['BehavExec']['HeadGazeGes']['nod_dummy_dur'])
 
 	def startFollowing(self):
 		self.__gaze_exec.gaze_state = GazeBehavExec.GazeBehavior.FOLLOW

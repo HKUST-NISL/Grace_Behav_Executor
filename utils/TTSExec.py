@@ -33,16 +33,26 @@ class TTSExec:
         self.__logger = logger.getChild(self.__class__.__name__)
 
         #Ros io
-        self.__tts_data_client = rospy.ServiceProxy(self.__config_data['Ros']['tts_data_service'], hr_msgs.srv.TTSData)
-        self.__tts_control_pub = rospy.Publisher(self.__config_data['Ros']['tts_control_topic'], std_msgs.msg.String, queue_size=self.__config_data['Ros']['queue_size'])
-        self.__tts_say_client = rospy.ServiceProxy(self.__config_data['Ros']['tts_say_service'], hr_msgs.srv.TTSTrigger)
-        self.__tts_event_sub = rospy.Subscriber(self.__config_data['Ros']['tts_event_topic'], std_msgs.msg.String, self.__ttsEventCallback, queue_size=self.__config_data['Ros']['queue_size'])
+        self.__tts_data_client = rospy.ServiceProxy(
+                                            self.__config_data['HR']['TTS']['tts_data_service'], hr_msgs.srv.TTSData)
+        self.__tts_control_pub = rospy.Publisher(
+                                            self.__config_data['HR']['TTS']['tts_control_topic'], 
+                                            std_msgs.msg.String, 
+                                            queue_size=self.__config_data['Custom']['Ros']['queue_size'])
+        self.__tts_say_client = rospy.ServiceProxy(
+                                            self.__config_data['HR']['TTS']['tts_say_service'], 
+                                            hr_msgs.srv.TTSTrigger)
+        self.__tts_event_sub = rospy.Subscriber(
+                                            self.__config_data['HR']['TTS']['tts_event_topic'], 
+                                            std_msgs.msg.String, 
+                                            self.__ttsEventCallback, 
+                                            queue_size=self.__config_data['Custom']['Ros']['queue_size'])
 
         #TTS execution configs
-        self.__tts_language_code = self.__config_data['Ros']['tts_language_code']
-        self.__tts_stop_cmd = self.__config_data['Ros']['tts_stop_cmd']
-        self.__tts_end_event_string = self.__config_data['Ros']['tts_end_event_string']
-        self.__tts_pure_token = self.__config_data['Ros']['tts_pure_token']
+        self.__tts_language_code = self.__config_data['BehavExec']['TTS']['tts_language_code']
+        self.__tts_stop_cmd = self.__config_data['HR']['TTS']['tts_stop_cmd']
+        self.__tts_end_event_string = self.__config_data['HR']['TTS']['tts_end_event_string']
+        self.__tts_pure_token = self.__config_data['HR']['TTS']['tts_pure_token']
         self.__latest_tts_event_string = ''
 
 

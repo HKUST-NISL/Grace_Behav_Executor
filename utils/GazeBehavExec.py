@@ -40,27 +40,39 @@ class GazeBehavExec:
         self.__logger = logger.getChild(self.__class__.__name__)
 
         #ROS IO
-        self.__hr_people_pub = rospy.Publisher(self.__config_data['Ros']['hr_people_perception_topic'], hr_msgs.msg.People, queue_size=self.__config_data['Ros']['queue_size'])
-        self.__hr_face_target_pub = rospy.Publisher(self.__config_data['Ros']['hr_face_target_topic'], hr_msgs.msg.Target, queue_size=self.__config_data['Ros']['queue_size'])
-        self.__hr_ATTN_cfg_client = dynamic_reconfigure.client.Client(self.__config_data['Ros']['hr_ATTN_cfg_server'],timeout=self.__config_data['Ros']['attn_timeout'])
-        self.__target_person_sub = rospy.Subscriber(self.__config_data['Ros']['final_target_person_topic'], hr_msgs.msg.Person, self.__targetPersonCallback, queue_size=self.__config_data['Ros']['queue_size'])
+        self.__hr_people_pub = rospy.Publisher(
+                                        self.__config_data['HR']['GazeHead']['hr_people_perception_topic'],
+                                        hr_msgs.msg.People, 
+                                        queue_size=self.__config_data['Custom']['Ros']['queue_size'])
+        self.__hr_face_target_pub = rospy.Publisher(
+                                        self.__config_data['HR']['GazeHead']['hr_face_target_topic'], 
+                                        hr_msgs.msg.Target, 
+                                        queue_size=self.__config_data['Custom']['Ros']['queue_size'])
+        self.__hr_ATTN_cfg_client = dynamic_reconfigure.client.Client(
+                                        self.__config_data['HR']['GazeHead']['hr_ATTN_cfg_server'],
+                                        timeout=self.__config_data['Custom']['Ros']['dynam_config_timeout'])
+        self.__target_person_sub = rospy.Subscriber(
+                                        self.__config_data['Custom']['Behavior']['final_target_person_topic'], 
+                                        hr_msgs.msg.Person, 
+                                        self.__targetPersonCallback, 
+                                        queue_size=self.__config_data['Custom']['Ros']['queue_size'])
 
 
         #Following & aversion specs
         self.gaze_state = GazeBehavior.FOLLOW
 
-        self.__follow_timeout = self.__config_data['HeadGazeGes']['follow_timeout']
+        self.__follow_timeout = self.__config_data['BehavExec']['HeadGazeGes']['follow_timeout']
 
-        self.__gaze_thread_rate = self.__config_data['HeadGazeGes']['gaze_thread_rate']
-        self.__dummy_target_id = self.__config_data['HeadGazeGes']['dummy_target_id']
+        self.__gaze_thread_rate = self.__config_data['BehavExec']['HeadGazeGes']['gaze_thread_rate']
+        self.__dummy_target_id = self.__config_data['BehavExec']['HeadGazeGes']['dummy_target_id']
         self.__aversion_target_expiry_stamp = -1
 
 
-        self.__aversion_target_min_life_expand = self.__config_data['HeadGazeGes']['aversion_target_min_life_expand']
-        self.__aversion_mean_life_expand = self.__config_data['HeadGazeGes']['aversion_mean_life_expand']
-        self.__aversion_loc_range = self.__config_data['HeadGazeGes']['aversion_loc_range']
+        self.__aversion_target_min_life_expand = self.__config_data['BehavExec']['HeadGazeGes']['aversion_target_min_life_expand']
+        self.__aversion_mean_life_expand = self.__config_data['BehavExec']['HeadGazeGes']['aversion_mean_life_expand']
+        self.__aversion_loc_range = self.__config_data['BehavExec']['HeadGazeGes']['aversion_loc_range']
 
-        self.__no_target_string = self.__config_data['HeadGazeGes']['no_target_string']
+        self.__no_target_string = self.__config_data['BehavExec']['HeadGazeGes']['no_target_string']
         self.__target_person_msg = hr_msgs.msg.Person()
         self.__target_person_msg.id = self.__no_target_string 
 
@@ -68,10 +80,10 @@ class GazeBehavExec:
 
         #Fake gaze target
         self.__neutral_gaze_dummy_target = hr_msgs.msg.Target()
-        self.__neutral_gaze_dummy_target.x = self.__config_data['HeadGazeGes']['neutral_gaze_dummy_target'][0]
-        self.__neutral_gaze_dummy_target.y = self.__config_data['HeadGazeGes']['neutral_gaze_dummy_target'][1]
-        self.__neutral_gaze_dummy_target.x = self.__config_data['HeadGazeGes']['neutral_gaze_dummy_target'][2]
-        self.__neutral_gaze_dummy_target.speed = self.__config_data['HeadGazeGes']['neutral_gaze_dummy_target'][3]
+        self.__neutral_gaze_dummy_target.x = self.__config_data['BehavExec']['HeadGazeGes']['neutral_gaze_dummy_target'][0]
+        self.__neutral_gaze_dummy_target.y = self.__config_data['BehavExec']['HeadGazeGes']['neutral_gaze_dummy_target'][1]
+        self.__neutral_gaze_dummy_target.x = self.__config_data['BehavExec']['HeadGazeGes']['neutral_gaze_dummy_target'][2]
+        self.__neutral_gaze_dummy_target.speed = self.__config_data['BehavExec']['HeadGazeGes']['neutral_gaze_dummy_target'][3]
         
 
         #Gaze behavior thread

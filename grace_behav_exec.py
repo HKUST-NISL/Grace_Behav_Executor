@@ -34,14 +34,6 @@ import utils.HeadGazeGesExec
 
 
 
-#Load configs
-def loadConfig(path):
-    #Load configs
-    with open(path, "r") as config_file:
-        config_data = yaml.load(config_file, Loader=yaml.FullLoader)
-        # print("Config file loaded")
-    return config_data
-
 #Create Logger
 def setupLogger(file_log_level, terminal_log_level, logger_name, log_file_name):
     log_formatter = logging.Formatter('%(asctime)s %(msecs)03d %(name)s %(levelname)s %(funcName)s(%(lineno)d) %(message)s', 
@@ -75,7 +67,7 @@ def handle_sigint(signalnum, frame):
 class BehavExec:
 
 
-    def __init__(self):
+    def __init__(self, config_data):
         #miscellaneous
         signal(SIGINT, handle_sigint)
         self.__logger = setupLogger(
@@ -84,8 +76,8 @@ class BehavExec:
                     self.__class__.__name__,
                     "./logs/log_" + datetime.now().strftime("%a_%d_%b_%Y_%I_%M_%S_%p"))
         path = os.path.dirname(os.path.realpath(getsourcefile(lambda:0))) + "/config/config.yaml"
-        self.__config_data = loadConfig(path)
-        self.__nh = rospy.init_node(self.__config_data['Ros']['node_name'])
+        self.__config_data = config_data
+        self.__nh = rospy.init_node(self.__config_data['BehavExec']['Ros']['node_name'])
 
         
         #For tts
@@ -102,31 +94,31 @@ class BehavExec:
 
         #For behaviour execution service
         self.__end_of_conv_sub = rospy.Subscriber(      
-                                        self.__config_data['Ros']['end_of_conv_topic'], 
+                                        self.__config_data['Custom']['Flow']['topic_stop_all'], 
                                         std_msgs.msg.Bool, 
                                         self.__endOfConvCallback, 
-                                        queue_size=self.__config_data['Ros']['queue_size'])
+                                        queue_size=self.__config_data['Custom']['Ros']['queue_size'])
         self.__behavior_server = rospy.Service(
-                                        self.__config_data['Ros']['grace_behavior_service'],
+                                        self.__config_data['Custom']['Behavior']['grace_behavior_service'],
                                         grace_attn_msgs.srv.GraceBehavior, 
                                         self.__handleGraceBehaviorServiceCall)
 
         self.__speak_event_pub = rospy.Publisher(      
-                                        self.__config_data['Ros']['speak_event_topic'], 
+                                        self.__config_data['Custom']['Behavior']['Event']['speak_event_topic'], 
                                         std_msgs.msg.String,
-                                        queue_size=self.__config_data['Ros']['queue_size'])
+                                        queue_size=self.__config_data['Custom']['Ros']['queue_size'])
         self.__hum_event_pub = rospy.Publisher(      
-                                        self.__config_data['Ros']['hum_event_topic'], 
+                                        self.__config_data['Custom']['Behavior']['Event']['hum_event_topic'], 
                                         std_msgs.msg.String,
-                                        queue_size=self.__config_data['Ros']['queue_size'])
+                                        queue_size=self.__config_data['Custom']['Ros']['queue_size'])
         self.__nod_event_pub = rospy.Publisher(      
-                                        self.__config_data['Ros']['nod_event_topic'], 
+                                        self.__config_data['Custom']['Behavior']['Event']['nod_event_topic'], 
                                         std_msgs.msg.String,
-                                        queue_size=self.__config_data['Ros']['queue_size'])
+                                        queue_size=self.__config_data['Custom']['Ros']['queue_size'])
         self.__gaze_event_pub = rospy.Publisher(      
-                                        self.__config_data['Ros']['gaze_event_topic'], 
+                                        self.__config_data['Custom']['Behavior']['Event']['gaze_event_topic'], 
                                         std_msgs.msg.String,
-                                        queue_size=self.__config_data['Ros']['queue_size'])
+                                        queue_size=self.__config_data['Custom']['Ros']['queue_size'])
 
 
     def __allBehavStop(self, req = None, res = None):
@@ -136,12 +128,12 @@ class BehavExec:
 
         #Neutral gaze & head
         self.__head_gaze_exec.goToNeutral()
-        self.__gaze_event_pub.publish( self.__config_data['General']['gaze_neutral_event_name'] )
-        self.__nod_event_pub.publish( self.__config_data['General']['stop_nodding_event_name'] )
+        self.__gaze_event_pub.publish( self.__config_data['BehavExec']['BehavEvent']['gaze_neutral_event_name'] )
+        self.__nod_event_pub.publish( self.__config_data['BehavExec']['BehavEvent']['stop_nodding_event_name'] )
 
         #Return evecution results if necessary
         if(res != None):
-            res.result = self.__config_data['General']['behav_all_stopped_string']
+            res.result = self.__config_data['BehavExec']['General']['behav_all_stopped_string']
             return res
     
     def __compBehavStop(self):
@@ -152,8 +144,8 @@ class BehavExec:
         self.__goToNeutralComp()
 
         #Robot behav state events
-        self.__speak_event_pub.publish( self.__config_data['General']['stop_speaking_event_name'] )
-        self.__hum_event_pub.publish( self.__config_data['General']['stop_humming_event_name'] ) 
+        self.__speak_event_pub.publish( self.__config_data['BehavExec']['BehavEvent']['stop_speaking_event_name'] )
+        self.__hum_event_pub.publish( self.__config_data['BehavExec']['BehavEvent']['stop_humming_event_name'] ) 
         
 
     def __endOfConvCallback(self, msg):
@@ -186,7 +178,7 @@ class BehavExec:
         self.__tts_exec.say(edited_text, req.lang)
         exp_thread.start()
         ges_thread.start()
-        rate = rospy.Rate(self.__config_data['CompositeBehavior']['comp_behav_exec_rate'])
+        rate = rospy.Rate(self.__config_data['BehavExec']['CompositeBehavior']['comp_behav_exec_rate'])
         while True:
             rate.sleep()
 
@@ -198,7 +190,7 @@ class BehavExec:
                 self.__goToNeutralComp()
 
                 #Report successful completion of the behaviour execution
-                res.result = self.__config_data['General']['behav_succ_string']
+                res.result = self.__config_data['BehavExec']['General']['behav_succ_string']
 
                 #Break the loop and finish the service
                 break
@@ -227,7 +219,7 @@ class BehavExec:
         
         num_behav = len(behav_seq)
         
-        rate = rospy.Rate(self.__config_data['CompositeBehavior']['comp_behav_exec_rate'])
+        rate = rospy.Rate(self.__config_data['BehavExec']['CompositeBehavior']['comp_behav_exec_rate'])
 
         #The behaviour to be executed
         exec_cnt = 0
@@ -258,15 +250,15 @@ class BehavExec:
 
         #Reset to a neutral arm pose
         self.__gesture_exec.triggerArmAnimationFixedDur(
-            self.__config_data['CompositeBehavior']['Predefined']['neutral_pose_info']['name'],
-            self.__config_data['CompositeBehavior']['Predefined']['neutral_pose_info']['dur'],
-            self.__config_data['CompositeBehavior']['Predefined']['neutral_pose_info']['magnitude'])
+            self.__config_data['BehavExec']['CompositeBehavior']['Predefined']['neutral_pose_info']['name'],
+            self.__config_data['BehavExec']['CompositeBehavior']['Predefined']['neutral_pose_info']['dur'],
+            self.__config_data['BehavExec']['CompositeBehavior']['Predefined']['neutral_pose_info']['magnitude'])
 
         #Reset to a neutral expression
         self.__expression_exec.triggerExpressionFixedDur(
-            self.__config_data['CompositeBehavior']['Predefined']['neutral_expression_info']['name'],
-            self.__config_data['CompositeBehavior']['Predefined']['neutral_expression_info']['dur'],
-            self.__config_data['CompositeBehavior']['Predefined']['neutral_expression_info']['magnitude'])
+            self.__config_data['BehavExec']['CompositeBehavior']['Predefined']['neutral_expression_info']['name'],
+            self.__config_data['BehavExec']['CompositeBehavior']['Predefined']['neutral_expression_info']['dur'],
+            self.__config_data['BehavExec']['CompositeBehavior']['Predefined']['neutral_expression_info']['magnitude'])
 
 
 
@@ -283,41 +275,41 @@ class BehavExec:
         #Prepare response object
         res = grace_attn_msgs.srv.GraceBehaviorResponse()
 
-        if(req.command == self.__config_data['General']['all_behav_stop_cmd']):
+        if(req.command == self.__config_data['BehavExec']['General']['all_behav_stop_cmd']):
             res = self.__allBehavStop(req,res)
 
-        elif(req.command == self.__config_data['General']['utterance_behav_stop_cmd']):
+        elif(req.command == self.__config_data['BehavExec']['General']['utterance_behav_stop_cmd']):
             self.__compBehavStop()
-            res = self.__config_data['General']['utterance_stopped_string']
+            res = self.__config_data['BehavExec']['General']['utterance_stopped_string']
   
 
-        elif(req.command == self.__config_data['General']['comp_behav_exec_cmd']):
+        elif(req.command == self.__config_data['BehavExec']['General']['comp_behav_exec_cmd']):
             self.__compBehavStop()#stop previous ones
-            self.__speak_event_pub.publish( self.__config_data['General']['start_speaking_event_name'] )
+            self.__speak_event_pub.publish( self.__config_data['BehavExec']['BehavEvent']['start_speaking_event_name'] )
             res = self.__compositeExec(req,res)
-            self.__speak_event_pub.publish( self.__config_data['General']['stop_speaking_event_name'] )
+            self.__speak_event_pub.publish( self.__config_data['BehavExec']['BehavEvent']['stop_speaking_event_name'] )
         
-        elif(req.command == self.__config_data['General']['hum_behav_exec_cmd']):
+        elif(req.command == self.__config_data['BehavExec']['General']['hum_behav_exec_cmd']):
             self.__compBehavStop()#stop previous ones
-            self.__hum_event_pub.publish( self.__config_data['General']['start_humming_event_name'] )
+            self.__hum_event_pub.publish( self.__config_data['BehavExec']['BehavEvent']['start_humming_event_name'] )
             res = self.__compositeExec(req,res)
-            self.__hum_event_pub.publish( self.__config_data['General']['stop_humming_event_name'] )   
+            self.__hum_event_pub.publish( self.__config_data['BehavExec']['BehavEvent']['stop_humming_event_name'] )   
         
-        elif(req.command == self.__config_data['General']['nod_cmd']):
-            self.__nod_event_pub.publish( self.__config_data['General']['start_nodding_event_name'] )
+        elif(req.command == self.__config_data['BehavExec']['General']['nod_cmd']):
+            self.__nod_event_pub.publish( self.__config_data['BehavExec']['BehavEvent']['start_nodding_event_name'] )
             self.__head_gaze_exec.nodOnce()
-            res.result = self.__config_data['General']['behav_succ_string']
-            self.__nod_event_pub.publish( self.__config_data['General']['stop_nodding_event_name'] )
+            res.result = self.__config_data['BehavExec']['General']['behav_succ_string']
+            self.__nod_event_pub.publish( self.__config_data['BehavExec']['BehavEvent']['stop_nodding_event_name'] )
 
-        elif(req.command == self.__config_data['General']['head_gaze_follow']):
-            self.__gaze_event_pub.publish( self.__config_data['General']['start_following_event_name'] )
+        elif(req.command == self.__config_data['BehavExec']['General']['head_gaze_follow']):
+            self.__gaze_event_pub.publish( self.__config_data['BehavExec']['BehavEvent']['start_following_event_name'] )
             self.__head_gaze_exec.startFollowing()
-            res.result = self.__config_data['General']['behav_succ_string']
+            res.result = self.__config_data['BehavExec']['General']['behav_succ_string']
 
-        elif(req.command == self.__config_data['General']['head_gaze_avert']):
-            self.__gaze_event_pub.publish( self.__config_data['General']['start_aversion_event_name'] )
+        elif(req.command == self.__config_data['BehavExec']['General']['head_gaze_avert']):
+            self.__gaze_event_pub.publish( self.__config_data['BehavExec']['BehavEvent']['start_aversion_event_name'] )
             self.__head_gaze_exec.startAverting()
-            res.result = self.__config_data['General']['behav_succ_string']
+            res.result = self.__config_data['BehavExec']['General']['behav_succ_string']
 
         else:
             self.__logger.error("Unexpected behavior command %s." % req.command)
@@ -328,7 +320,12 @@ class BehavExec:
 
 
 if __name__ == '__main__':
-    behav_executor = BehavExec()
+
+    file_path = os.path.dirname(os.path.realpath(getsourcefile(lambda:0)))
+    sys.path.append(os.path.join(file_path, '..'))
+    from CommonConfigs.grace_cfg_loader import *
+
+    behav_executor = BehavExec(loadGraceConfigs())
     behav_executor.mainLoop()
 
 
