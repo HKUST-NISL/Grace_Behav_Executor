@@ -1,8 +1,7 @@
 # Ignore any network weights
 *.pt
 Grace_Dialogue/ngrok/
-Grace_Dialogue/utils/__pycache__/
+__pycache__/
 logs
 head_images/
-
 *.pyc
