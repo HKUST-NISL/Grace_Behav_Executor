@@ -324,8 +324,9 @@ if __name__ == '__main__':
     file_path = os.path.dirname(os.path.realpath(getsourcefile(lambda:0)))
     sys.path.append(os.path.join(file_path, '..'))
     from CommonConfigs.grace_cfg_loader import *
-
-    behav_executor = BehavExec(loadGraceConfigs())
+    grace_config = loadGraceConfigs()
+    
+    behav_executor = BehavExec(grace_config)
     behav_executor.mainLoop()
 
 
