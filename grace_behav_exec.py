@@ -27,34 +27,18 @@ import std_msgs
 
 
 #Specifics
+file_path = os.path.dirname(os.path.realpath(getsourcefile(lambda:0)))
+sys.path.append(file_path)
 import utils.TTSExec
 import utils.ExpressionExec
 import utils.GestureExec
 import utils.HeadGazeGesExec
 
+#Misc
+sys.path.append(os.path.join(file_path, '..'))
+from CommonConfigs.grace_cfg_loader import *
+from CommonConfigs.logging import setupLogger
 
-
-#Create Logger
-def setupLogger(file_log_level, terminal_log_level, logger_name, log_file_name):
-    log_formatter = logging.Formatter('%(asctime)s %(msecs)03d %(name)s %(levelname)s %(funcName)s(%(lineno)d) %(message)s', 
-                                  datefmt='%d/%m/%Y %H:%M:%S')
-
-    f = open(log_file_name, "a")
-    f.close()
-    file_handler = logging.FileHandler(log_file_name)
-    file_handler.setFormatter(log_formatter)
-    file_handler.setLevel(file_log_level)
-
-    stream_handler = logging.StreamHandler()
-    stream_handler.setFormatter(log_formatter)
-    stream_handler.setLevel(terminal_log_level)
-
-    logger = logging.getLogger(logger_name)
-    logger.addHandler(file_handler)
-    logger.addHandler(stream_handler)
-    logger.setLevel( min(file_log_level,terminal_log_level) )#set to lowest
-
-    return logger
 
 #Respond to exit signal
 def handle_sigint(signalnum, frame):
@@ -67,17 +51,22 @@ def handle_sigint(signalnum, frame):
 class BehavExec:
 
 
-    def __init__(self, config_data):
+    def __init__(self, config_data, service_mode = True):
         #miscellaneous
         signal(SIGINT, handle_sigint)
+
+        #Executor uses its own logger and output to its own dir
         self.__logger = setupLogger(
                     logging.DEBUG, 
                     logging.INFO, 
                     self.__class__.__name__,
-                    "./logs/log_" + datetime.now().strftime("%a_%d_%b_%Y_%I_%M_%S_%p"))
+                    os.path.join(file_path,"./logs/log_") + datetime.now().strftime("%a_%d_%b_%Y_%I_%M_%S_%p"))
 
         self.__config_data = config_data
-        self.__nh = rospy.init_node(self.__config_data['BehavExec']['Ros']['node_name'])
+
+        #Ros node initialization
+        if(service_mode):
+            self.__nh = rospy.init_node(self.__config_data['BehavExec']['Ros']['node_name'])
 
         
         #For tts
@@ -92,17 +81,25 @@ class BehavExec:
         #For gaze & head gestures
         self.__head_gaze_exec = utils.HeadGazeGesExec.HeadGazeGesExec(self.__config_data,self.__logger)
 
-        #For behaviour execution service
+        #For flow control
         self.__end_of_conv_sub = rospy.Subscriber(      
                                         self.__config_data['Custom']['Flow']['topic_stop_all'], 
                                         std_msgs.msg.Bool, 
                                         self.__endOfConvCallback, 
                                         queue_size=self.__config_data['Custom']['Ros']['queue_size'])
-        self.__behavior_server = rospy.Service(
-                                        self.__config_data['Custom']['Behavior']['grace_behavior_service'],
-                                        grace_attn_msgs.srv.GraceBehavior, 
-                                        self.__handleGraceBehaviorServiceCall)
 
+        #For behaviour execution 
+        if(service_mode):
+            #ros-service interface
+            self.__behavior_server = rospy.Service(
+                                            self.__config_data['Custom']['Behavior']['grace_behavior_service'],
+                                            grace_attn_msgs.srv.GraceBehavior, 
+                                            self.__handleGraceBehaviorServiceCall)
+        else:
+            #Threading interface
+            self.__behav_thread = None
+
+        #For robot behavior state synchronization
         self.__speak_event_pub = rospy.Publisher(      
                                         self.__config_data['Custom']['Behavior']['Event']['speak_event_topic'], 
                                         std_msgs.msg.String,
@@ -146,12 +143,9 @@ class BehavExec:
         #Robot behav state events
         self.__speak_event_pub.publish( self.__config_data['BehavExec']['BehavEvent']['stop_speaking_event_name'] )
         self.__hum_event_pub.publish( self.__config_data['BehavExec']['BehavEvent']['stop_humming_event_name'] ) 
-        
 
     def __endOfConvCallback(self, msg):
         self.__allBehavStop()
-
-
 
     '''
         Composite Behavior Service handling
@@ -271,7 +265,7 @@ class BehavExec:
             # self.__triggerExpressionFixedDur('happy',3,0.8)
             rate.sleep()
 
-    def __handleGraceBehaviorServiceCall(self, req):
+    def __handleGraceBehaviorRequest(self, req):
         #Prepare response object
         res = grace_attn_msgs.srv.GraceBehaviorResponse()
 
@@ -315,17 +309,25 @@ class BehavExec:
             self.__logger.error("Unexpected behavior command %s." % req.command)
         return res
 
+    def __handleGraceBehaviorServiceCall(self, req):
+        #Old ros-service interface
+        return self.__handleGraceBehaviorRequest(req)
 
+    def initiateBehaviorThread(self, req):
+        #This function doest NOT check thread safety, i.e., if another thread is running
+        #the behavior call is assumed to be handled either
+        #(1) Near instantaneously: gaze, nod, stop command
+        #or (2) By terminating previous ones: humming and speaking will call the stop-comp method first
+        self.__behav_thread = threading.Thread(
+                            target = self.__handleGraceBehaviorRequest, 
+                            args = [req],
+                            daemon = False)
+        self.__behav_thread.start()
 
 
 
 if __name__ == '__main__':
-
-    file_path = os.path.dirname(os.path.realpath(getsourcefile(lambda:0)))
-    sys.path.append(os.path.join(file_path, '..'))
-    from CommonConfigs.grace_cfg_loader import *
     grace_config = loadGraceConfigs()
-    
     behav_executor = BehavExec(grace_config)
     behav_executor.mainLoop()
 
