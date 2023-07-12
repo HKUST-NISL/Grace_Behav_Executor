@@ -50,10 +50,10 @@ if __name__ == '__main__':
 
 
 
-    # #(2) Test Nodding
-    # req = grace_attn_msgs.srv.GraceBehaviorRequest()
-    # req.command = configs['BehavExec']['General']['nod_cmd']
-    # print("Service call response is:\n %s" % grace_behavior_client(req))
+    #(2) Test Nodding
+    req = grace_attn_msgs.srv.GraceBehaviorRequest()
+    req.command = configs['BehavExec']['General']['nod_cmd']
+    print("Service call response is:\n %s" % grace_behavior_client(req))
 
 
 

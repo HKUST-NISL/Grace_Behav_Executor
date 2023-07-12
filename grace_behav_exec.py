@@ -75,7 +75,7 @@ class BehavExec:
                     logging.INFO, 
                     self.__class__.__name__,
                     "./logs/log_" + datetime.now().strftime("%a_%d_%b_%Y_%I_%M_%S_%p"))
-        path = os.path.dirname(os.path.realpath(getsourcefile(lambda:0))) + "/config/config.yaml"
+
         self.__config_data = config_data
         self.__nh = rospy.init_node(self.__config_data['BehavExec']['Ros']['node_name'])
 
