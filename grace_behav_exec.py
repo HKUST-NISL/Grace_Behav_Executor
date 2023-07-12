@@ -32,7 +32,9 @@ sys.path.append(file_path)
 import utils.TTSExec
 import utils.ExpressionExec
 import utils.GestureExec
-import utils.HeadGazeGesExec
+import utils.NoddingExec
+import utils.GazeBehavExec
+from enum import Enum
 
 #Misc
 sys.path.append(os.path.join(file_path, '..'))
@@ -47,39 +49,63 @@ def handle_sigint(signalnum, frame):
     sys.exit()
 
 
+class ExecFnc(Enum):
+    GAZE = 0
+    NOD = 1
+    HUM = 2
+    SPEECH = 3
 
 class BehavExec:
 
 
-    def __init__(self, config_data, service_mode = True):
-        #miscellaneous
+    def __init__(self, config_data, service_mode = True, instance_fnc = None):
+        #Miscellaneous
         signal(SIGINT, handle_sigint)
 
+        #Operation mode
+        self.__service_mode = service_mode
+        self.__instance_fnc = instance_fnc
+
         #Executor uses its own logger and output to its own dir
+        logger_name = self.__class__.__name__
+        if(not self.__service_mode):
+            self.__instance_string = '[' + str(self.__instance_fnc) + ']'
+            #In instance mode,we better not use class name alone as logger name
+            logger_name = self.__instance_string + logger_name
+
         self.__logger = setupLogger(
                     logging.DEBUG, 
                     logging.INFO, 
-                    self.__class__.__name__,
-                    os.path.join(file_path,"./logs/log_") + datetime.now().strftime("%a_%d_%b_%Y_%I_%M_%S_%p"))
+                    logger_name,
+                    os.path.join(file_path,"./logs/" + self.__instance_string + "log_") + datetime.now().strftime("%a_%d_%b_%Y_%I_%M_%S_%p"))
 
         self.__config_data = config_data
 
         #Ros node initialization
-        if(service_mode):
+        if(self.__service_mode):
             self.__nh = rospy.init_node(self.__config_data['BehavExec']['Ros']['node_name'])
 
-        
-        #For tts
-        self.__tts_exec = utils.TTSExec.TTSExec(self.__config_data,self.__logger)
+        if(self.__service_mode or self.__instance_fnc == ExecFnc.HUM or self.__instance_fnc == ExecFnc.SPEECH):
+            #For tts
+            self.__tts_exec = utils.TTSExec.TTSExec(self.__config_data,self.__logger)
 
-        #For arm gesture
-        self.__gesture_exec = utils.GestureExec.GestureExec(self.__config_data,self.__logger)
+            #For arm gesture
+            self.__gesture_exec = utils.GestureExec.GestureExec(self.__config_data,self.__logger)
 
-        #For expressions
-        self.__expression_exec = utils.ExpressionExec.ExpressionExec(self.__config_data,self.__logger)
+            #For expressions
+            self.__expression_exec = utils.ExpressionExec.ExpressionExec(self.__config_data,self.__logger)
 
-        #For gaze & head gestures
-        self.__head_gaze_exec = utils.HeadGazeGesExec.HeadGazeGesExec(self.__config_data,self.__logger)
+
+        #For nodding
+        if(self.__service_mode or self.__instance_fnc == ExecFnc.NOD):
+            self.__nod_exec = utils.NoddingExec.NoddingExec(self.__config_data,self.__logger)
+
+
+
+        #For gaze (and head) attention
+        if(self.__service_mode or self.__instance_fnc == ExecFnc.GAZE):
+            self.__gaze_exec = utils.GazeBehavExec.GazeBehavExec(self.__config_data,self.__logger)
+
 
         #For flow control
         self.__end_of_conv_sub = rospy.Subscriber(      
@@ -89,7 +115,7 @@ class BehavExec:
                                         queue_size=self.__config_data['Custom']['Ros']['queue_size'])
 
         #For behaviour execution 
-        if(service_mode):
+        if(self.__service_mode):
             #ros-service interface
             self.__behavior_server = rospy.Service(
                                             self.__config_data['Custom']['Behavior']['grace_behavior_service'],
@@ -98,6 +124,7 @@ class BehavExec:
         else:
             #Threading interface
             self.__behav_thread = None
+
 
         #For robot behavior state synchronization
         self.__speak_event_pub = rospy.Publisher(      
@@ -119,14 +146,17 @@ class BehavExec:
 
 
     def __allBehavStop(self, req = None, res = None):
+        if(self.__service_mode or self.__instance_fnc == ExecFnc.HUM or self.__instance_fnc == ExecFnc.SPEECH):
+            #Cutoff any on-going composite behavior
+            self.__compBehavStop()
 
-        #Cutoff any on-going composite behavior
-        self.__compBehavStop()
+        if(self.__service_mode or self.__instance_fnc == ExecFnc.GAZE):
+            #Neutral gaze & head
+            self.__gaze_exec.goToNeutral()
+            self.__gaze_event_pub.publish( self.__config_data['BehavExec']['BehavEvent']['gaze_neutral_event_name'] )
+            self.__nod_event_pub.publish( self.__config_data['BehavExec']['BehavEvent']['stop_nodding_event_name'] )
 
-        #Neutral gaze & head
-        self.__head_gaze_exec.goToNeutral()
-        self.__gaze_event_pub.publish( self.__config_data['BehavExec']['BehavEvent']['gaze_neutral_event_name'] )
-        self.__nod_event_pub.publish( self.__config_data['BehavExec']['BehavEvent']['stop_nodding_event_name'] )
+        #Nothing to "stop" for nodding
 
         #Return evecution results if necessary
         if(res != None):
@@ -291,18 +321,18 @@ class BehavExec:
         
         elif(req.command == self.__config_data['BehavExec']['General']['nod_cmd']):
             self.__nod_event_pub.publish( self.__config_data['BehavExec']['BehavEvent']['start_nodding_event_name'] )
-            self.__head_gaze_exec.nodOnce()
+            self.__nod_exec.nodOnce()
             res.result = self.__config_data['BehavExec']['General']['behav_succ_string']
             self.__nod_event_pub.publish( self.__config_data['BehavExec']['BehavEvent']['stop_nodding_event_name'] )
 
         elif(req.command == self.__config_data['BehavExec']['General']['head_gaze_follow']):
             self.__gaze_event_pub.publish( self.__config_data['BehavExec']['BehavEvent']['start_following_event_name'] )
-            self.__head_gaze_exec.startFollowing()
+            self.__gaze_exec.startFollowing()
             res.result = self.__config_data['BehavExec']['General']['behav_succ_string']
 
         elif(req.command == self.__config_data['BehavExec']['General']['head_gaze_avert']):
             self.__gaze_event_pub.publish( self.__config_data['BehavExec']['BehavEvent']['start_aversion_event_name'] )
-            self.__head_gaze_exec.startAverting()
+            self.__gaze_exec.startAverting()
             res.result = self.__config_data['BehavExec']['General']['behav_succ_string']
 
         else:
