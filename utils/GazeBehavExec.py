@@ -172,3 +172,5 @@ class GazeBehavExec:
                 self.__gazeFollowing()
             elif(self.gaze_state == GazeBehavior.AVERSION):
                 self.__gazeAversion()
+            else:
+                self.__logger.error("Unexpected gaze state!!")
