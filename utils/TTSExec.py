@@ -69,7 +69,7 @@ class TTSExec:
 
     def __ttsEventCallback(self, msg):
         self.__latest_tts_event_string = msg.data
-        self.__logger.info('Latest TTS event is \"%s\".' % self.__latest_tts_event_string)
+        self.__logger.debug('Latest TTS event is \"%s\".' % self.__latest_tts_event_string)
 
 
 
