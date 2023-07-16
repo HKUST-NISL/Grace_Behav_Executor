@@ -62,6 +62,9 @@ class BehavExec:
         #Miscellaneous
         signal(SIGINT, handle_sigint)
 
+        #Config
+        self.__config_data = config_data
+
         #Operation mode
         self.__service_mode = service_mode
         self.__instance_fnc = instance_fnc
@@ -77,9 +80,7 @@ class BehavExec:
                     logging.DEBUG, 
                     logging.INFO, 
                     logger_name,
-                    os.path.join(file_path,"./logs/" + self.__instance_string + "log_") + datetime.now().strftime("%a_%d_%b_%Y_%I_%M_%S_%p"))
-
-        self.__config_data = config_data
+                    os.path.join(file_path,"./logs/log_") + datetime.now().strftime(self.__config_data['Custom']['Logging']['time_format']))
 
         #Ros node initialization
         if(self.__service_mode):
