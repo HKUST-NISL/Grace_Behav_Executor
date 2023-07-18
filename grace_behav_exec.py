@@ -175,8 +175,8 @@ class BehavExec:
     
     def __compBehavStop(self, publish_state_change, stop_before_thread_exec):
 
-        #Debug
-        self.__logger.info("Comp stop command received.")
+        # #Debug
+        # self.__logger.info("Comp stop command received.")
 
         if(self.__config_data['TM']['Debug']['true_executor']):
             #Cutoff any on-going tts
