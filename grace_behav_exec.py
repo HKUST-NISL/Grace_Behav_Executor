@@ -344,7 +344,7 @@ class BehavExec:
         #Old ros-service interface
         return self.__handleGraceBehaviorRequest(req)
 
-    def initiateBehaviorThread(self, req):
+    def initiateBehaviorThread(self, req, block = False):
         #This function doest NOT check thread safety, i.e., if another thread is running
         #the behavior call is assumed to be handled either
         #(1) Near instantaneously: gaze, nod, stop command
@@ -354,6 +354,9 @@ class BehavExec:
                             args = [req],
                             daemon = False)
         self.__behav_thread.start()
+
+        if(block):
+            self.__behav_thread.join()
 
 
 
