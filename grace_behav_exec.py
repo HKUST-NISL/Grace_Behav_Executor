@@ -197,12 +197,14 @@ class BehavExec:
         Composite Behavior Service handling
     '''
     def __compositeExec(self, req, res):
-        #We don't need auto-generated expressions and gestures anymore
-        self.__logger.debug('Utterance %s.' % req.utterance )
-        edited_text = self.__tts_exec.postEditTTSText(req.utterance)
+
         
         dur_total = None
-        if(self.__config_data['TM']['Debug']['true_executor']):
+        if(self.__config_data['TM']['Debug']['true_executor']):        #We don't need auto-generated expressions and gestures anymore
+            self.__logger.debug('Utterance %s.' % req.utterance )
+            edited_text = self.__tts_exec.postEditTTSText(req.utterance)
+
+            
             #Get total duration of tts
             dur_total = self.__tts_exec.parseTTSDur(self.__tts_exec.getTTSData(edited_text,req.lang))
 
