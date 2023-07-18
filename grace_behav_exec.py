@@ -91,27 +91,25 @@ class BehavExec:
         if(self.__service_mode):
             self.__nh = rospy.init_node(self.__config_data['BehavExec']['Ros']['node_name'])
 
-        if(self.__service_mode or self.__instance_fnc == ExecFnc.HUM or self.__instance_fnc == ExecFnc.SPEECH):
-            #For tts
-            self.__tts_exec = utils.TTSExec.TTSExec(self.__config_data,self.__logger)
+        if(self.__config_data['TM']['Debug']['true_executor']):
+            #For tts, arm and expressions
+            if(self.__service_mode or self.__instance_fnc == ExecFnc.HUM or self.__instance_fnc == ExecFnc.SPEECH):
+                #For tts
+                self.__tts_exec = utils.TTSExec.TTSExec(self.__config_data,self.__logger)
 
-            #For arm gesture
-            self.__gesture_exec = utils.GestureExec.GestureExec(self.__config_data,self.__logger)
+                #For arm gesture
+                self.__gesture_exec = utils.GestureExec.GestureExec(self.__config_data,self.__logger)
 
-            #For expressions
-            self.__expression_exec = utils.ExpressionExec.ExpressionExec(self.__config_data,self.__logger)
+                #For expressions
+                self.__expression_exec = utils.ExpressionExec.ExpressionExec(self.__config_data,self.__logger)
 
+            #For nodding
+            if(self.__service_mode or self.__instance_fnc == ExecFnc.NOD):
+                self.__nod_exec = utils.NoddingExec.NoddingExec(self.__config_data,self.__logger)
 
-        #For nodding
-        if(self.__service_mode or self.__instance_fnc == ExecFnc.NOD):
-            self.__nod_exec = utils.NoddingExec.NoddingExec(self.__config_data,self.__logger)
-
-
-
-        #For gaze (and head) attention
-        if(self.__service_mode or self.__instance_fnc == ExecFnc.GAZE):
-            self.__gaze_exec = utils.GazeBehavExec.GazeBehavExec(self.__config_data,self.__logger)
-
+            #For gaze (and head) attention
+            if(self.__service_mode or self.__instance_fnc == ExecFnc.GAZE):
+                self.__gaze_exec = utils.GazeBehavExec.GazeBehavExec(self.__config_data,self.__logger)
 
         #For flow control
         self.__end_of_conv_sub = rospy.Subscriber(      
@@ -180,9 +178,9 @@ class BehavExec:
         #Debug
         self.__logger.info("Comp stop command received.")
 
-
-        #Cutoff any on-going tts
-        self.__tts_exec.stopTTS()
+        if(self.__config_data['TM']['Debug']['true_executor']):
+            #Cutoff any on-going tts
+            self.__tts_exec.stopTTS()
 
         #Reset to neutral arm-pose and facial expression
         self.__goToNeutralComp(stop_before_thread_exec)
@@ -203,13 +201,16 @@ class BehavExec:
         self.__logger.debug('Utterance %s.' % req.utterance )
         edited_text = self.__tts_exec.postEditTTSText(req.utterance)
         
-        #Get total duration of tts
-        dur_total = self.__tts_exec.parseTTSDur(self.__tts_exec.getTTSData(edited_text,req.lang))
+        dur_total = None
+        if(self.__config_data['TM']['Debug']['true_executor']):
+            #Get total duration of tts
+            dur_total = self.__tts_exec.parseTTSDur(self.__tts_exec.getTTSData(edited_text,req.lang))
 
-        #Arrange expressions and gestures in physical time
-        expression_seq = self.__arrangeCompExecSeq(dur_total, req.expressions, req.exp_start, req.exp_end, req.exp_mag)
-        gesture_seq = self.__arrangeCompExecSeq(dur_total, req.gestures, req.ges_start, req.ges_end, req.ges_mag)
-
+            #Arrange expressions and gestures in physical time
+            expression_seq = self.__arrangeCompExecSeq(dur_total, req.expressions, req.exp_start, req.exp_end, req.exp_mag)
+            gesture_seq = self.__arrangeCompExecSeq(dur_total, req.gestures, req.ges_start, req.ges_end, req.ges_mag)
+        else:
+            dur_total = 5.0 #Fake dur
 
         self.__behav_service_thread_keep_alive = True
         if(self.__comp_exec_exectuing):#If we are still preparing to execute this comp behav
@@ -223,13 +224,13 @@ class BehavExec:
             #Behavior start time
             self.__comp_exec_start_time = rospy.get_time()
 
+            if(self.__config_data['TM']['Debug']['true_executor']):
+                #Start tts
+                self.__tts_exec.say(edited_text, req.lang)
 
-            #Start tts
-            self.__tts_exec.say(edited_text, req.lang)
-
-            #Start behav exec
-            self.__exp_thread.start()
-            self.__ges_thread.start()
+                #Start behav exec
+                self.__exp_thread.start()
+                self.__ges_thread.start()
 
             #Wait for tts completion
             while True:
@@ -314,17 +315,18 @@ class BehavExec:
             self.__exp_thread = None
             self.__ges_thread = None
 
-        #Reset to a neutral arm pose
-        self.__gesture_exec.triggerArmAnimationFixedDur(
-            self.__config_data['BehavExec']['CompositeBehavior']['Predefined']['neutral_pose_info']['name'],
-            self.__config_data['BehavExec']['CompositeBehavior']['Predefined']['neutral_pose_info']['dur'],
-            self.__config_data['BehavExec']['CompositeBehavior']['Predefined']['neutral_pose_info']['magnitude'])
+        if(self.__config_data['TM']['Debug']['true_executor']):
+            #Reset to a neutral arm pose
+            self.__gesture_exec.triggerArmAnimationFixedDur(
+                self.__config_data['BehavExec']['CompositeBehavior']['Predefined']['neutral_pose_info']['name'],
+                self.__config_data['BehavExec']['CompositeBehavior']['Predefined']['neutral_pose_info']['dur'],
+                self.__config_data['BehavExec']['CompositeBehavior']['Predefined']['neutral_pose_info']['magnitude'])
 
-        #Reset to a neutral expression
-        self.__expression_exec.triggerExpressionFixedDur(
-            self.__config_data['BehavExec']['CompositeBehavior']['Predefined']['neutral_expression_info']['name'],
-            self.__config_data['BehavExec']['CompositeBehavior']['Predefined']['neutral_expression_info']['dur'],
-            self.__config_data['BehavExec']['CompositeBehavior']['Predefined']['neutral_expression_info']['magnitude'])
+            #Reset to a neutral expression
+            self.__expression_exec.triggerExpressionFixedDur(
+                self.__config_data['BehavExec']['CompositeBehavior']['Predefined']['neutral_expression_info']['name'],
+                self.__config_data['BehavExec']['CompositeBehavior']['Predefined']['neutral_expression_info']['dur'],
+                self.__config_data['BehavExec']['CompositeBehavior']['Predefined']['neutral_expression_info']['magnitude'])
 
 
 
@@ -365,18 +367,21 @@ class BehavExec:
         
         elif(req.command == self.__config_data['BehavExec']['General']['nod_cmd']):
             self.__nod_event_pub.publish( self.__config_data['BehavExec']['BehavEvent']['start_nodding_event_name'] )
-            self.__nod_exec.nodOnce()
+            if(self.__config_data['TM']['Debug']['true_executor']):
+                self.__nod_exec.nodOnce()
             res.result = self.__config_data['BehavExec']['General']['behav_succ_string']
             self.__nod_event_pub.publish( self.__config_data['BehavExec']['BehavEvent']['stop_nodding_event_name'] )
 
         elif(req.command == self.__config_data['BehavExec']['General']['head_gaze_follow']):
             self.__gaze_event_pub.publish( self.__config_data['BehavExec']['BehavEvent']['start_following_event_name'] )
-            self.__gaze_exec.startFollowing()
+            if(self.__config_data['TM']['Debug']['true_executor']):
+                self.__gaze_exec.startFollowing()
             res.result = self.__config_data['BehavExec']['General']['behav_succ_string']
 
         elif(req.command == self.__config_data['BehavExec']['General']['head_gaze_avert']):
             self.__gaze_event_pub.publish( self.__config_data['BehavExec']['BehavEvent']['start_aversion_event_name'] )
-            self.__gaze_exec.startAverting()
+            if(self.__config_data['TM']['Debug']['true_executor']):
+                self.__gaze_exec.startAverting()
             res.result = self.__config_data['BehavExec']['General']['behav_succ_string']
 
         else:
