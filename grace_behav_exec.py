@@ -158,7 +158,7 @@ class BehavExec:
     def __allBehavStop(self, req = None, res = None):
         if(self.__service_mode or self.__instance_fnc == ExecFnc.HUM or self.__instance_fnc == ExecFnc.SPEECH):
             #Cutoff any on-going composite behavior
-            self.__compBehavStop(publish_state_change = True, stop_before_thread_exec = True)
+            self.__compBehavStop(publish_state_change = True)
 
         if(self.__service_mode or self.__instance_fnc == ExecFnc.GAZE):
             #Neutral gaze & head
@@ -334,7 +334,7 @@ class BehavExec:
             res = self.__allBehavStop(req,res)
 
         elif(req.command == self.__config_data['BehavExec']['General']['utterance_behav_stop_cmd']):
-            self.__compBehavStop(publish_state_change = True, stop_before_thread_exec = True)
+            self.__compBehavStop(publish_state_change = True)
             res = self.__config_data['BehavExec']['General']['utterance_stopped_string']
   
 
@@ -347,7 +347,7 @@ class BehavExec:
                 self.__speak_event_pub.publish( self.__config_data['BehavExec']['BehavEvent']['start_speaking_event_name'] )
                 res = self.__compositeExec(req,res)
                 self.__speak_event_pub.publish( self.__config_data['BehavExec']['BehavEvent']['stop_speaking_event_name'] )
-                self.__comp_exec_lock.release(blocking=True)
+                self.__comp_exec_lock.release()
 
         elif(req.command == self.__config_data['BehavExec']['General']['hum_behav_exec_cmd']):            
             # self.__compBehavStop(publish_state_change = False, stop_before_thread_exec = False)#stop previous ones
@@ -358,7 +358,7 @@ class BehavExec:
                 self.__hum_event_pub.publish( self.__config_data['BehavExec']['BehavEvent']['start_humming_event_name'] )
                 res = self.__compositeExec(req,res)
                 self.__hum_event_pub.publish( self.__config_data['BehavExec']['BehavEvent']['stop_humming_event_name'] )   
-                self.__comp_exec_lock.release(blocking=True)
+                self.__comp_exec_lock.release()
 
         elif(req.command == self.__config_data['BehavExec']['General']['nod_cmd']):
             self.__nod_event_pub.publish( self.__config_data['BehavExec']['BehavEvent']['start_nodding_event_name'] )
