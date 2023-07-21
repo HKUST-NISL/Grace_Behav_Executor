@@ -149,8 +149,8 @@ class BehavExec:
                                         queue_size=self.__config_data['Custom']['Ros']['queue_size'])
 
 
-        #For maintAining comp execution
-        self.__comp_exec_exectuing = False
+        #For maintaining comp execution
+        self.__comp_exec_lock = threading.Lock()
         self.__exp_thread = None
         self.__ges_thread = None
 
@@ -173,7 +173,7 @@ class BehavExec:
             res.result = self.__config_data['BehavExec']['General']['behav_all_stopped_string']
             return res
     
-    def __compBehavStop(self, publish_state_change, stop_before_thread_exec):
+    def __compBehavStop(self, publish_state_change):
 
         # #Debug
         # self.__logger.info("Comp stop command received.")
@@ -183,7 +183,7 @@ class BehavExec:
             self.__tts_exec.stopTTS()
 
         #Reset to neutral arm-pose and facial expression
-        self.__goToNeutralComp(stop_before_thread_exec)
+        self.__goToNeutralComp()
 
         if(publish_state_change):
             #Robot behav state events
@@ -196,9 +196,7 @@ class BehavExec:
     '''
         Composite Behavior Service handling
     '''
-    def __compositeExec(self, req, res):
-
-        
+    def __compositeExec(self, req, res):        
         dur_total = None
         if(self.__config_data['TM']['Debug']['true_executor']):        #We don't need auto-generated expressions and gestures anymore
             self.__logger.debug('Utterance %s.' % req.utterance )
@@ -214,48 +212,41 @@ class BehavExec:
         else:
             dur_total = 5.0 #Fake dur
 
-        self.__behav_service_thread_keep_alive = True
-        if(self.__comp_exec_exectuing):#If we are still preparing to execute this comp behav
-            
+        #Prepare two threads for executing expression and gestures
+        rate = rospy.Rate(self.__config_data['BehavExec']['CompositeBehavior']['comp_behav_exec_rate'])
+        self.__exp_thread = threading.Thread(target=lambda: self.__compExecBySeq(expression_seq, self.__expression_exec.triggerExpressionFixedDur), daemon=False)
+        self.__ges_thread = threading.Thread(target=lambda: self.__compExecBySeq(gesture_seq, self.__gesture_exec.triggerArmAnimationFixedDur), daemon=False)
 
-            #Prepare two threads for executing expression and gestures
-            rate = rospy.Rate(self.__config_data['BehavExec']['CompositeBehavior']['comp_behav_exec_rate'])
-            self.__exp_thread = threading.Thread(target=lambda: self.__compExecBySeq(expression_seq, self.__expression_exec.triggerExpressionFixedDur), daemon=False)
-            self.__ges_thread = threading.Thread(target=lambda: self.__compExecBySeq(gesture_seq, self.__gesture_exec.triggerArmAnimationFixedDur), daemon=False)
+        #Behavior start time
+        self.__comp_exec_start_time = rospy.get_time()
 
-            #Behavior start time
-            self.__comp_exec_start_time = rospy.get_time()
+        if(self.__config_data['TM']['Debug']['true_executor']):
+            #Start tts
+            self.__tts_exec.say(edited_text, req.lang)
 
-            if(self.__config_data['TM']['Debug']['true_executor']):
-                #Start tts
-                self.__tts_exec.say(edited_text, req.lang)
+            #Start behav exec
+            self.__exp_thread.start()
+            self.__ges_thread.start()
 
-                #Start behav exec
-                self.__exp_thread.start()
-                self.__ges_thread.start()
+        #Block until tts completion / execution thread is killed by external call
+        while self.__comp_exec_keep_alive:
+            rate.sleep()
+            elapsed_time = rospy.get_time() - self.__comp_exec_start_time
+            if(
+                elapsed_time >= dur_total#TTS is over
+            ):
+                self.__logger.info('Execution completed.')
+                
+                #Stop gesture and expressions
+                self.__goToNeutralComp()
 
-            #Wait for tts completion
-            while True:
-                rate.sleep()
-                elapsed_time = rospy.get_time() - self.__comp_exec_start_time
-                if(
-                    elapsed_time >= dur_total#TTS is over
-                ):
-                    self.__logger.info('Execution completed.')
-                    
-                    #Stop gesture and expressions
-                    self.__goToNeutralComp(stop_before_thread_exec = False)
+                #Report successful completion of the behaviour execution
+                res.result = self.__config_data['BehavExec']['General']['behav_succ_string']
 
-                    #Report successful completion of the behaviour execution
-                    res.result = self.__config_data['BehavExec']['General']['behav_succ_string']
-
-                    #Break the loop and finish the service
-                    break
-                else:#TTS still going
-                    pass#Do nothing
-        else:
-            #Discard this execution
-            pass
+                #Break the loop and finish the service
+                break
+            else:#TTS still going
+                pass#Do nothing
 
         return res
 
@@ -286,8 +277,8 @@ class BehavExec:
         #Total time since the start of thie performance command
         elapsed_time = 0
 
-
-        while self.__behav_service_thread_keep_alive:
+        #Block until completion / killed by external call
+        while self.__comp_exec_keep_alive:
             #Update the elapsed time
             elapsed_time = rospy.get_time() - self.__comp_exec_start_time
 
@@ -304,19 +295,12 @@ class BehavExec:
 
             rate.sleep()
 
-    def __goToNeutralComp(self, stop_before_thread_exec):
+    def __goToNeutralComp(self):
 
-        if(stop_before_thread_exec):
-            #Kill any un-initiated commands
-            self.__comp_exec_exectuing = False
+        #Kill any on-going comp-exec thread
+        self.__comp_exec_keep_alive = False
 
-        #Kill any on-going behaviour service thread
-        if(self.__exp_thread != None or self.__ges_thread != None ):
-            self.__behav_service_thread_keep_alive = False
-            #Reset thread field
-            self.__exp_thread = None
-            self.__ges_thread = None
-
+        #Go to reset configuration
         if(self.__config_data['TM']['Debug']['true_executor']):
             #Reset to a neutral arm pose
             self.__gesture_exec.triggerArmAnimationFixedDur(
@@ -342,6 +326,7 @@ class BehavExec:
             rate.sleep()
 
     def __handleGraceBehaviorRequest(self, req):
+
         #Prepare response object
         res = grace_attn_msgs.srv.GraceBehaviorResponse()
 
@@ -353,20 +338,28 @@ class BehavExec:
             res = self.__config_data['BehavExec']['General']['utterance_stopped_string']
   
 
-        elif(req.command == self.__config_data['BehavExec']['General']['comp_behav_exec_cmd']):
-            self.__comp_exec_exectuing = True
-            self.__compBehavStop(publish_state_change = False, stop_before_thread_exec = False)#stop previous ones
-            self.__speak_event_pub.publish( self.__config_data['BehavExec']['BehavEvent']['start_speaking_event_name'] )
-            res = self.__compositeExec(req,res)
-            self.__speak_event_pub.publish( self.__config_data['BehavExec']['BehavEvent']['stop_speaking_event_name'] )
-        
-        elif(req.command == self.__config_data['BehavExec']['General']['hum_behav_exec_cmd']):
-            self.__comp_exec_exectuing = True
-            self.__compBehavStop(publish_state_change = False, stop_before_thread_exec = False)#stop previous ones
-            self.__hum_event_pub.publish( self.__config_data['BehavExec']['BehavEvent']['start_humming_event_name'] )
-            res = self.__compositeExec(req,res)
-            self.__hum_event_pub.publish( self.__config_data['BehavExec']['BehavEvent']['stop_humming_event_name'] )   
-        
+        elif(req.command == self.__config_data['BehavExec']['General']['comp_behav_exec_cmd']):            
+            # self.__compBehavStop(publish_state_change = False, stop_before_thread_exec = False)#stop previous ones
+            
+            #Set the keep alive flag if the lock is successively acquired -- otherwise nothing will happen
+            self.__comp_exec_keep_alive = self.__comp_exec_lock.acquire(blocking=False)
+            if(self.__comp_exec_keep_alive):
+                self.__speak_event_pub.publish( self.__config_data['BehavExec']['BehavEvent']['start_speaking_event_name'] )
+                res = self.__compositeExec(req,res)
+                self.__speak_event_pub.publish( self.__config_data['BehavExec']['BehavEvent']['stop_speaking_event_name'] )
+                self.__comp_exec_lock.release(blocking=True)
+
+        elif(req.command == self.__config_data['BehavExec']['General']['hum_behav_exec_cmd']):            
+            # self.__compBehavStop(publish_state_change = False, stop_before_thread_exec = False)#stop previous ones
+            
+            #Set the keep alive flag if the lock is successively acquired -- otherwise nothing will happen
+            self.__comp_exec_keep_alive = self.__comp_exec_lock.acquire(blocking=False)
+            if(self.__comp_exec_keep_alive):
+                self.__hum_event_pub.publish( self.__config_data['BehavExec']['BehavEvent']['start_humming_event_name'] )
+                res = self.__compositeExec(req,res)
+                self.__hum_event_pub.publish( self.__config_data['BehavExec']['BehavEvent']['stop_humming_event_name'] )   
+                self.__comp_exec_lock.release(blocking=True)
+
         elif(req.command == self.__config_data['BehavExec']['General']['nod_cmd']):
             self.__nod_event_pub.publish( self.__config_data['BehavExec']['BehavEvent']['start_nodding_event_name'] )
             if(self.__config_data['TM']['Debug']['true_executor']):
@@ -388,6 +381,8 @@ class BehavExec:
 
         else:
             self.__logger.error("Unexpected behavior command %s." % req.command)
+
+
         return res
 
     def __handleGraceBehaviorServiceCall(self, req):
