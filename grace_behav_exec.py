@@ -325,7 +325,7 @@ class BehavExec:
             # self.__triggerExpressionFixedDur('happy',3,0.8)
             rate.sleep()
 
-    def __handleGraceBehaviorRequest(self, req):
+    def __handleGraceBehaviorRequest(self, req, end_of_conv = False):
 
         #Prepare response object
         res = grace_attn_msgs.srv.GraceBehaviorResponse()
@@ -343,11 +343,14 @@ class BehavExec:
             
             #Set the keep alive flag if the lock is successively acquired -- otherwise nothing will happen
             self.__comp_exec_keep_alive = self.__comp_exec_lock.acquire(blocking=False)
-            if(self.__comp_exec_keep_alive):
+            if( end_of_conv or self.__comp_exec_keep_alive):
                 self.__speak_event_pub.publish( self.__config_data['BehavExec']['BehavEvent']['start_speaking_event_name'] )
                 res = self.__compositeExec(req,res)
                 self.__speak_event_pub.publish( self.__config_data['BehavExec']['BehavEvent']['stop_speaking_event_name'] )
-                self.__comp_exec_lock.release()
+                try:
+                    self.__comp_exec_lock.release()
+                except:
+                    pass
 
         elif(req.command == self.__config_data['BehavExec']['General']['hum_behav_exec_cmd']):            
             # self.__compBehavStop(publish_state_change = False, stop_before_thread_exec = False)#stop previous ones
@@ -389,20 +392,19 @@ class BehavExec:
         #Old ros-service interface
         return self.__handleGraceBehaviorRequest(req)
 
-    def initiateBehaviorThread(self, req, block = False):
+    def initiateBehaviorThread(self, req, end_of_conv = False):
         #This function doest NOT check thread safety, i.e., if another thread is running
         #the behavior call is assumed to be handled either
         #(1) Near instantaneously: gaze, nod, stop command
         #or (2) By terminating previous ones: humming and speaking will call the stop-comp method first
         self.__behav_thread = threading.Thread(
                             target = self.__handleGraceBehaviorRequest, 
-                            args = [req],
+                            args = [req,end_of_conv],
                             daemon = False)
         self.__behav_thread.start()
 
-        if(block):
+        if(end_of_conv):#Block if it's end of conv command
             self.__behav_thread.join()
-
 
 
 if __name__ == '__main__':
