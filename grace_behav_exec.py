@@ -204,8 +204,7 @@ class BehavExec:
 
             
             #Get total duration of tts
-            dur_total = self.__tts_exec.parseTTSDur(self.__tts_exec.getTTSData(edited_text,req.lang))
-
+            dur_total = self.__tts_exec.parseTTSDur(self.__tts_exec.getTTSData(edited_text,req.lang)) + self.__config_data['TM']['Debug']['ugly_delay']
             #Arrange expressions and gestures in physical time
             expression_seq = self.__arrangeCompExecSeq(dur_total, req.expressions, req.exp_start, req.exp_end, req.exp_mag)
             gesture_seq = self.__arrangeCompExecSeq(dur_total, req.gestures, req.ges_start, req.ges_end, req.ges_mag)
@@ -247,7 +246,8 @@ class BehavExec:
                 break
             else:#TTS still going
                 pass#Do nothing
-
+        self.__tts_exec.stopTTS()
+        
         return res
 
     def __arrangeCompExecSeq(self, total_dur, names, start_portion, end_portion, magnitude):
@@ -342,7 +342,8 @@ class BehavExec:
             # self.__compBehavStop(publish_state_change = False, stop_before_thread_exec = False)#stop previous ones
             
             #Set the keep alive flag if the lock is successively acquired -- otherwise nothing will happen
-            self.__comp_exec_keep_alive = self.__comp_exec_lock.acquire(blocking=False)
+            self.__comp_exec_keep_alive  = self.__comp_exec_lock.acquire(blocking=False)
+            # self.__comp_exec_keep_alive = self.__comp_exec_lock.acquire(blocking=True)
             if( end_of_conv or self.__comp_exec_keep_alive):
                 self.__speak_event_pub.publish( self.__config_data['BehavExec']['BehavEvent']['start_speaking_event_name'] )
                 res = self.__compositeExec(req,res)
@@ -351,12 +352,16 @@ class BehavExec:
                     self.__comp_exec_lock.release()
                 except:
                     pass
+            else:
+                self.__logger.info('Skip due to lock.')
+
 
         elif(req.command == self.__config_data['BehavExec']['General']['hum_behav_exec_cmd']):            
             # self.__compBehavStop(publish_state_change = False, stop_before_thread_exec = False)#stop previous ones
             
             #Set the keep alive flag if the lock is successively acquired -- otherwise nothing will happen
             self.__comp_exec_keep_alive = self.__comp_exec_lock.acquire(blocking=False)
+            # self.__comp_exec_keep_alive = self.__comp_exec_lock.acquire(blocking=True)
             if(self.__comp_exec_keep_alive):
                 self.__hum_event_pub.publish( self.__config_data['BehavExec']['BehavEvent']['start_humming_event_name'] )
                 res = self.__compositeExec(req,res)
