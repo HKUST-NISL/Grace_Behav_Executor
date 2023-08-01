@@ -42,11 +42,11 @@ class TTSExec:
         self.__tts_say_client = rospy.ServiceProxy(
                                             self.__config_data['HR']['TTS']['tts_say_service'], 
                                             hr_msgs.srv.TTSTrigger)
-        self.__tts_event_sub = rospy.Subscriber(
-                                            self.__config_data['HR']['TTS']['tts_event_topic'], 
-                                            std_msgs.msg.String, 
-                                            self.__ttsEventCallback, 
-                                            queue_size=self.__config_data['Custom']['Ros']['queue_size'])
+        # self.__tts_event_sub = rospy.Subscriber(
+        #                                     self.__config_data['HR']['TTS']['tts_event_topic'], 
+        #                                     std_msgs.msg.String, 
+        #                                     self.__ttsEventCallback, 
+        #                                     queue_size=self.__config_data['Custom']['Ros']['queue_size'])
 
         #TTS execution configs
         self.__tts_language_code = self.__config_data['BehavExec']['TTS']['tts_language_code']
