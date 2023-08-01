@@ -198,39 +198,41 @@ class BehavExec:
     '''
     def __compositeExec(self, req, res):        
         dur_total = None
+        tts_dur = None
         if(self.__config_data['TM']['Debug']['true_executor']):        #We don't need auto-generated expressions and gestures anymore
             self.__logger.debug('Utterance %s.' % req.utterance )
             edited_text = self.__tts_exec.postEditTTSText(req.utterance)
 
             
             #Get total duration of tts
-            dur_total = self.__tts_exec.parseTTSDur(self.__tts_exec.getTTSData(edited_text,req.lang)) + self.__config_data['TM']['Debug']['ugly_delay']
+            tts_dur = self.__tts_exec.parseTTSDur(self.__tts_exec.getTTSData(edited_text,req.lang))
+            dur_total = tts_dur + self.__config_data['TM']['Debug']['ugly_delay']
             #Arrange expressions and gestures in physical time
-            expression_seq = self.__arrangeCompExecSeq(dur_total, req.expressions, req.exp_start, req.exp_end, req.exp_mag)
-            gesture_seq = self.__arrangeCompExecSeq(dur_total, req.gestures, req.ges_start, req.ges_end, req.ges_mag)
+            expression_seq = self.__arrangeCompExecSeq(tts_dur, req.expressions, req.exp_start, req.exp_end, req.exp_mag)
+            gesture_seq = self.__arrangeCompExecSeq(tts_dur, req.gestures, req.ges_start, req.ges_end, req.ges_mag)
         else:
+            tts_dur = 5.0
             dur_total = 5.0 #Fake dur
 
-        #Prepare two threads for executing expression and gestures
         rate = rospy.Rate(self.__config_data['BehavExec']['CompositeBehavior']['comp_behav_exec_rate'])
-        self.__exp_thread = threading.Thread(target=lambda: self.__compExecBySeq(expression_seq, self.__expression_exec.triggerExpressionFixedDur), daemon=False)
-        self.__ges_thread = threading.Thread(target=lambda: self.__compExecBySeq(gesture_seq, self.__gesture_exec.triggerArmAnimationFixedDur), daemon=False)
 
         #Behavior start time
-        self.__comp_exec_start_time = rospy.get_time()
+        comp_exec_start_time = rospy.get_time()
 
         if(self.__config_data['TM']['Debug']['true_executor']):
             #Start tts
             self.__tts_exec.say(edited_text, req.lang)
 
             #Start behav exec
+            self.__exp_thread = threading.Thread(target=lambda: self.__compExecBySeq(expression_seq, self.__expression_exec.triggerExpressionFixedDur,comp_exec_start_time), daemon=False)
+            self.__ges_thread = threading.Thread(target=lambda: self.__compExecBySeq(gesture_seq, self.__gesture_exec.triggerArmAnimationFixedDur,comp_exec_start_time), daemon=False)
             self.__exp_thread.start()
             self.__ges_thread.start()
 
         #Block until tts completion / execution thread is killed by external call
         while self.__comp_exec_keep_alive:
             rate.sleep()
-            elapsed_time = rospy.get_time() - self.__comp_exec_start_time
+            elapsed_time = rospy.get_time() - comp_exec_start_time
             if(
                 elapsed_time >= dur_total#TTS is over
             ):
@@ -246,6 +248,7 @@ class BehavExec:
                 break
             else:#TTS still going
                 pass#Do nothing
+
         self.__tts_exec.stopTTS()
         
         return res
@@ -266,7 +269,7 @@ class BehavExec:
             behav_seq[i][3] = magnitude[i]
         return behav_seq
 
-    def __compExecBySeq(self, behav_seq, exec_fnc):
+    def __compExecBySeq(self, behav_seq, exec_fnc, exec_start_time):
         
         num_behav = len(behav_seq)
         
@@ -280,7 +283,7 @@ class BehavExec:
         #Block until completion / killed by external call
         while self.__comp_exec_keep_alive:
             #Update the elapsed time
-            elapsed_time = rospy.get_time() - self.__comp_exec_start_time
+            elapsed_time = rospy.get_time() - exec_start_time
 
             if( exec_cnt < num_behav):# Start executing this behavior
                 if( elapsed_time >= behav_seq[exec_cnt][1]):
