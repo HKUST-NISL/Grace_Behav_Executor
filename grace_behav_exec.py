@@ -374,7 +374,7 @@ class BehavExec:
         elif(req.command == self.__config_data['BehavExec']['General']['nod_cmd']):
             self.__nod_event_pub.publish( self.__config_data['BehavExec']['BehavEvent']['start_nodding_event_name'] )
             if(self.__config_data['TM']['Debug']['true_executor']):
-                self.__nod_exec.nodOnce()
+                self.__nod_exec.nodOnce( int(req.utterance) )#reuse the utterance field for delivering nodding mode
             res.result = self.__config_data['BehavExec']['General']['behav_succ_string']
             self.__nod_event_pub.publish( self.__config_data['BehavExec']['BehavEvent']['stop_nodding_event_name'] )
 

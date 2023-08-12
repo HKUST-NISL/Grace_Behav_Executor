@@ -45,20 +45,29 @@ class NoddingExec:
 		#Nodding
 		self.__nod_prefix_string = self.__config_data['HR']['GazeHead']['hr_nod_common_string']
 		self.__nod_type_strings = self.__config_data['BehavExec']['HeadGazeGes']['nod_type_strings']
-		self.__nod_mag_range = self.__config_data['BehavExec']['HeadGazeGes']['nod_mag_range']
-
+		self.__nod_mag_range_low = self.__config_data['BehavExec']['HeadGazeGes']['nod_mag_range_low']
+		self.__nod_mag_range_high = self.__config_data['BehavExec']['HeadGazeGes']['nod_mag_range_high']
 
 	'''
 		#Interface
 	'''
-	def nodOnce(self):
+	def nodOnce(self, mode):
 		#Compose and publish a nodding command
 		#For now the parameter of this nodding gesture is randomized locally
 		nodding_gesture_cmd = hr_msgs.msg.SetAnimation()
 		nodding_gesture_cmd.name = self.__nod_prefix_string + str(numpy.random.randint(self.__nod_type_strings[0],self.__nod_type_strings[1]+1))
 		nodding_gesture_cmd.repeat = 1
 		nodding_gesture_cmd.speed = 1.0
-		nodding_gesture_cmd.magnitude = numpy.random.uniform(self.__nod_mag_range[0],self.__nod_mag_range[1])
+
+		mag_range = None
+		if( mode == self.__config_data['BehavExec']['HeadGazeGes']['minor_nod_code']):
+			mag_range = self.__nod_mag_range_low
+		elif( mode == self.__config_data['BehavExec']['HeadGazeGes']['major_nod_code']):
+			mag_range = self.__nod_mag_range_high
+		else:
+			self.__logger.error('Unexpected mode code.')
+
+		nodding_gesture_cmd.magnitude = numpy.random.uniform(mag_range[0],mag_range[1])
 		self.__hr_head_gesture_pub.publish(nodding_gesture_cmd)
 		#Dummy sleep
 		time.sleep(self.__config_data['BehavExec']['HeadGazeGes']['nod_dummy_dur'])
