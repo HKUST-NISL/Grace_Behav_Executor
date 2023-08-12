@@ -206,7 +206,7 @@ class BehavExec:
             
             #Get total duration of tts
             tts_dur = self.__tts_exec.parseTTSDur(self.__tts_exec.getTTSData(edited_text,req.lang))
-            dur_total = tts_dur + self.__config_data['TM']['Debug']['ugly_delay']
+            dur_total = tts_dur + self.__config_data['BehavExec']['TTS']['ugly_delay']
             #Arrange expressions and gestures in physical time
             expression_seq = self.__arrangeCompExecSeq(tts_dur, req.expressions, req.exp_start, req.exp_end, req.exp_mag)
             gesture_seq = self.__arrangeCompExecSeq(tts_dur, req.gestures, req.ges_start, req.ges_end, req.ges_mag)
