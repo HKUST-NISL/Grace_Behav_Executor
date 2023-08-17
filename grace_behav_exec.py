@@ -196,7 +196,7 @@ class BehavExec:
     '''
         Composite Behavior Service handling
     '''
-    def __compositeExec(self, req, res):        
+    def __compositeExec(self, req, res, use_delay):        
         dur_total = None
         tts_dur = None
         if(self.__config_data['TM']['Debug']['true_executor']):        #We don't need auto-generated expressions and gestures anymore
@@ -206,7 +206,7 @@ class BehavExec:
             
             #Get total duration of tts
             tts_dur = self.__tts_exec.parseTTSDur(self.__tts_exec.getTTSData(edited_text,req.lang))
-            dur_total = tts_dur + self.__config_data['BehavExec']['TTS']['ugly_delay']
+            dur_total = tts_dur + use_delay * self.__config_data['BehavExec']['TTS']['ugly_delay']
             #Arrange expressions and gestures in physical time
             expression_seq = self.__arrangeCompExecSeq(tts_dur, req.expressions, req.exp_start, req.exp_end, req.exp_mag)
             gesture_seq = self.__arrangeCompExecSeq(tts_dur, req.gestures, req.ges_start, req.ges_end, req.ges_mag)
@@ -220,6 +220,10 @@ class BehavExec:
         comp_exec_start_time = rospy.get_time()
 
         if(self.__config_data['TM']['Debug']['true_executor']):
+            if(use_delay):
+                #Pause before tts start
+                rospy.sleep(0.5*self.__config_data['BehavExec']['TTS']['ugly_delay'])
+
             #Start tts
             self.__tts_exec.say(edited_text, req.lang)
 
@@ -340,7 +344,6 @@ class BehavExec:
             self.__compBehavStop(publish_state_change = True)
             res = self.__config_data['BehavExec']['General']['utterance_stopped_string']
   
-
         elif(req.command == self.__config_data['BehavExec']['General']['comp_behav_exec_cmd']):            
             # self.__compBehavStop(publish_state_change = False, stop_before_thread_exec = False)#stop previous ones
             
@@ -349,7 +352,7 @@ class BehavExec:
             # self.__comp_exec_keep_alive = self.__comp_exec_lock.acquire(blocking=True)
             if( end_of_conv or self.__comp_exec_keep_alive):
                 self.__speak_event_pub.publish( self.__config_data['BehavExec']['BehavEvent']['start_speaking_event_name'] )
-                res = self.__compositeExec(req,res)
+                res = self.__compositeExec(req,res,use_delay=True)
                 self.__speak_event_pub.publish( self.__config_data['BehavExec']['BehavEvent']['stop_speaking_event_name'] )
                 try:
                     self.__comp_exec_lock.release()
@@ -357,7 +360,6 @@ class BehavExec:
                     pass
             else:
                 self.__logger.info('Skip due to lock.')
-
 
         elif(req.command == self.__config_data['BehavExec']['General']['hum_behav_exec_cmd']):            
             # self.__compBehavStop(publish_state_change = False, stop_before_thread_exec = False)#stop previous ones
@@ -367,7 +369,7 @@ class BehavExec:
             # self.__comp_exec_keep_alive = self.__comp_exec_lock.acquire(blocking=True)
             if(self.__comp_exec_keep_alive):
                 self.__hum_event_pub.publish( self.__config_data['BehavExec']['BehavEvent']['start_humming_event_name'] )
-                res = self.__compositeExec(req,res)
+                res = self.__compositeExec(req,res,use_delay = True)
                 self.__hum_event_pub.publish( self.__config_data['BehavExec']['BehavEvent']['stop_humming_event_name'] )   
                 self.__comp_exec_lock.release()
 

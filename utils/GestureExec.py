@@ -47,6 +47,7 @@ class GestureExec:
         #Gesture execution configs
         self.__min_arm_anim_key_frame_transition = self.__config_data['BehavExec']['ArmGes']['arm_anim_min_motor_transition_time']
         self.__default_arm_anim_key_frame_transition = self.__config_data['BehavExec']['ArmGes']['arm_anim_motor_transition_time']
+        self.__max_speed_ratio = self.__config_data['BehavExec']['ArmGes']['arm_anim_motor_max_speed_ratio']
 
         #Initialize
         self.__configAnimationMotorSpeed(self.__default_arm_anim_key_frame_transition)
@@ -89,6 +90,10 @@ class GestureExec:
             dur_rectified = dur_in
         #Compute playback speed that will achieve this duration
         playback_speed_ratio = normal_dur / dur_rectified
+
+        #Rectify speed ratio as well
+        if( playback_speed_ratio > self.__max_speed_ratio):
+            playback_speed_ratio = self.__max_speed_ratio
 
         return playback_speed_ratio
 
