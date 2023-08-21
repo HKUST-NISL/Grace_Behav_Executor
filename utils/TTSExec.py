@@ -42,6 +42,11 @@ class TTSExec:
         self.__tts_say_client = rospy.ServiceProxy(
                                             self.__config_data['HR']['TTS']['tts_say_service'], 
                                             hr_msgs.srv.TTSTrigger)
+        self.__tts_say_topic = rospy.Publisher(
+                                            self.__config_data['HR']['TTS']['tts_say_topic'], 
+                                            hr_msgs.msg.TTS, 
+                                            queue_size=self.__config_data['Custom']['Ros']['queue_size'])
+
         # self.__tts_event_sub = rospy.Subscriber(
         #                                     self.__config_data['HR']['TTS']['tts_event_topic'], 
         #                                     std_msgs.msg.String, 
@@ -105,12 +110,12 @@ class TTSExec:
         self.__latest_tts_event_string = ''
 
         #Compose a request
-        req = hr_msgs.srv.TTSTriggerRequest()
-        req.text = text
-        req.lang = lang
+        msg = hr_msgs.msg.TTS()
+        msg.text = text
+        msg.lang = lang
 
         #Call the service
-        return self.__tts_say_client(req)
+        return self.__tts_say_topic.publish(msg)
 
     def receivedTTSEndEvent(self):
         return (self.__latest_tts_event_string == self.__tts_end_event_string)

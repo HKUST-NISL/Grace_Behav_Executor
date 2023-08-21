@@ -206,7 +206,9 @@ class BehavExec:
             
             #Get total duration of tts
             tts_dur = self.__tts_exec.parseTTSDur(self.__tts_exec.getTTSData(edited_text,req.lang))
-            dur_total = tts_dur + use_delay * self.__config_data['BehavExec']['TTS']['ugly_delay']
+            dur_total = tts_dur
+            if(use_delay and self.__config_data['BehavExec']['TTS']['ugly_delay'] > 0):
+                dur_total = dur_total + self.__config_data['BehavExec']['TTS']['ugly_delay']
             #Arrange expressions and gestures in physical time
             expression_seq = self.__arrangeCompExecSeq(tts_dur, req.expressions, req.exp_start, req.exp_end, req.exp_mag)
             gesture_seq = self.__arrangeCompExecSeq(tts_dur, req.gestures, req.ges_start, req.ges_end, req.ges_mag)
@@ -220,7 +222,7 @@ class BehavExec:
         comp_exec_start_time = rospy.get_time()
 
         if(self.__config_data['TM']['Debug']['true_executor']):
-            if(use_delay):
+            if(use_delay and self.__config_data['BehavExec']['TTS']['ugly_delay'] > 0):
                 #Pause before tts start
                 rospy.sleep(0.5*self.__config_data['BehavExec']['TTS']['ugly_delay'])
 
@@ -254,6 +256,7 @@ class BehavExec:
                 pass#Do nothing
 
         self.__tts_exec.stopTTS()
+        self.__logger.info('Exiting execution thread.')
         
         return res
 
