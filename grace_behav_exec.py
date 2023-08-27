@@ -347,13 +347,14 @@ class BehavExec:
             self.__compBehavStop(publish_state_change = True)
             res = self.__config_data['BehavExec']['General']['utterance_stopped_string']
   
-        elif(req.command == self.__config_data['BehavExec']['General']['comp_behav_exec_cmd']):            
-            # self.__compBehavStop(publish_state_change = False, stop_before_thread_exec = False)#stop previous ones
-            
+        elif(req.command == self.__config_data['BehavExec']['General']['comp_behav_exec_cmd']):                        
             #Set the keep alive flag if the lock is successively acquired -- otherwise nothing will happen
             self.__comp_exec_keep_alive  = self.__comp_exec_lock.acquire(blocking=False)
             # self.__comp_exec_keep_alive = self.__comp_exec_lock.acquire(blocking=True)
             if( end_of_conv or self.__comp_exec_keep_alive):
+                #Force stop any leftover tts
+                self.__tts_exec.stopTTS()
+
                 self.__speak_event_pub.publish( self.__config_data['BehavExec']['BehavEvent']['start_speaking_event_name'] )
                 res = self.__compositeExec(req,res,use_delay=True)
                 self.__speak_event_pub.publish( self.__config_data['BehavExec']['BehavEvent']['stop_speaking_event_name'] )
