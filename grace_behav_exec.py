@@ -349,9 +349,11 @@ class BehavExec:
   
         elif(req.command == self.__config_data['BehavExec']['General']['comp_behav_exec_cmd']):                        
             #Set the keep alive flag if the lock is successively acquired -- otherwise nothing will happen
-            self.__comp_exec_keep_alive  = self.__comp_exec_lock.acquire(blocking=False)
+            lock_acquired  = self.__comp_exec_lock.acquire(blocking=False)
             # self.__comp_exec_keep_alive = self.__comp_exec_lock.acquire(blocking=True)
-            if( end_of_conv or self.__comp_exec_keep_alive):
+            if( end_of_conv or lock_acquired):
+                self.__comp_exec_keep_alive = lock_acquired
+
                 #Force stop any leftover tts
                 self.__tts_exec.stopTTS()
 
