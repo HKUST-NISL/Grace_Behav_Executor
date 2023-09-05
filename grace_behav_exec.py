@@ -103,6 +103,16 @@ class BehavExec:
                 #For expressions
                 self.__expression_exec = utils.ExpressionExec.ExpressionExec(self.__config_data,self.__logger)
 
+                if(self.__instance_fnc == ExecFnc.SPEECH):
+                    #special speech completion fnc
+                    self.__speech_completion_pub = rospy.Publisher(      
+                                        self.__config_data['Custom']['Behavior']['speech_completion_topic'], 
+                                        std_msgs.msg.Bool,
+                                        queue_size=self.__config_data['Custom']['Ros']['queue_size'])
+
+
+
+
             #For nodding
             if(self.__service_mode or self.__instance_fnc == ExecFnc.NOD):
                 self.__nod_exec = utils.NoddingExec.NoddingExec(self.__config_data,self.__logger)
@@ -249,6 +259,9 @@ class BehavExec:
 
                 #Report successful completion of the behaviour execution
                 res.result = self.__config_data['BehavExec']['General']['behav_succ_string']
+                if(self.__instance_fnc == ExecFnc.SPEECH):
+                    self.__speech_completion_pub.publish(std_msgs.msg.Bool(True))
+
 
                 #Break the loop and finish the service
                 break
