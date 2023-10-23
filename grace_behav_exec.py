@@ -81,7 +81,7 @@ class BehavExec:
 
         self.__logger = setupLogger(
                     logging.DEBUG, 
-                    logging.INFO, 
+                    logging.WARN, 
                     logger_name,
                     os.path.join(file_path,"./logs/log_") 
                     + logger_name
