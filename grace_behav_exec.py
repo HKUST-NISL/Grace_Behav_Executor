@@ -268,7 +268,9 @@ class BehavExec:
             else:#TTS still going
                 pass#Do nothing
 
-        self.__tts_exec.stopTTS()
+        # REMOVE THIS TTS STOP SIGNAL - MOVE IT TO INSIDE THE GO TO NEUTRAL COMMAND
+        # self.__tts_exec.stopTTS()
+
         self.__logger.info('Exiting execution thread.')
         
         return res
@@ -322,6 +324,7 @@ class BehavExec:
 
         #Kill any on-going comp-exec thread
         self.__comp_exec_keep_alive = False
+
 
         #Go to reset configuration
         if(self.__config_data['TM']['Debug']['true_executor']):
